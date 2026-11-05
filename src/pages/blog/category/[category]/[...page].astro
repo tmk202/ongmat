@@ -1,0 +1,119 @@
+---
+import CabinetPage from '../../../../layouts/CabinetPage.astro';
+import BlogFilters from '../../../../components/BlogFilters.astro';
+import Pagination from '../../../../components/Pagination.astro';
+import { getCollection } from 'astro:content';
+import { BLOG_CATEGORIES, categoryLabel } from '../../../../lib/blog-categories';
+
+export async function getStaticPaths({ paginate }) {
+  const posts = await getCollection('blog');
+
+  return BLOG_CATEGORIES.flatMap((category) => {
+    const filtered = posts
+      .filter((post) => post.data.category === category.slug)
+      .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
+    return paginate(filtered, {
+      pageSize: 10,
+      params: { category: category.slug },
+      props: { category },
+    });
+  });
+}
+
+const { page, category } = Astro.props;
+const posts = page.data;
+
+const all = await getCollection('blog');
+const counts = BLOG_CATEGORIES.map((item) => ({
+  slug: item.slug,
+  label: item.label,
+  count: all.filter((post) => post.data.category === item.slug).length,
+}));
+
+const siteUrl = (Astro.site ?? new URL('https://ecommarketdata.com')).origin;
+const label = categoryLabel(category.slug);
+const baseUrl = `${siteUrl}/blog/category/${category.slug}/`;
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'CollectionPage',
+    name: `${label} — Notes`,
+    url: baseUrl,
+    inLanguage: 'en-US',
+    isPartOf: { '@type': 'Blog', name: 'ecommarketdata Notes', url: `${siteUrl}/blog/` },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: `${label} posts`,
+    numberOfItems: posts.length,
+    itemListElement: posts.map((post, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: post.data.title,
+      url: `${siteUrl}/blog/${post.id}/`,
+    })),
+  },
+];
+
+const formatDate = (date: Date) =>
+  date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+---
+
+<CabinetPage
+  title={`${label} — Blog — ecommarketdata`}
+  description={`Notes on ${label.toLowerCase()} for e-commerce teams.`}
+  canonical={page.currentPage > 1 ? `${baseUrl}${page.currentPage}/` : undefined}
+  jsonLd={jsonLd}
+>
+  <section class="section">
+    <div class="container">
+      <nav class="crumbs">
+        <a href="/">Home</a> / <a href="/blog/">Blog</a> / {label}
+      </nav>
+
+      <p class="eyebrow">Notes</p>
+      <h1>{label}</h1>
+      <p class="lede">{posts.length} note{posts.length === 1 ? '' : 's'} in this category.</p>
+
+      <BlogFilters counts={counts} total={all.length} active={category.slug} />
+
+      <div class="post-list">
+        {
+          posts.map((post) => (
+            <a class="post-row" href={`/blog/${post.id}/`}>
+              <img
+                class="post-thumb"
+                src={`/thumbs/${post.id}.webp`}
+                width="800"
+                height="450"
+                alt=""
+                loading="lazy"
+                decoding="async"
+              />
+              <span class="post-body">
+                <time class="post-date" datetime={post.data.pubDate.toISOString()}>
+                  {formatDate(post.data.pubDate)}
+                </time>
+                <strong>{post.data.title}</strong>
+                <span class="post-desc">{post.data.description}</span>
+                <span class="post-tags">
+                  <span class="tag">{label}</span>
+                </span>
+              </span>
+            </a>
+          ))
+        }
+      </div>
+
+      <Pagination
+        currentPage={page.currentPage}
+        lastPage={page.lastPage}
+        prevUrl={page.url.prev}
+        nextUrl={page.url.next}
+      />
+    </div>
+  </section>
+</CabinetPage>

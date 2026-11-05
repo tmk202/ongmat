@@ -1,0 +1,562 @@
+---
+import CabinetPage from '../layouts/CabinetPage.astro';
+import dataset from '../data/market-sample.json';
+import {
+  byMarketCategory,
+  filterRows,
+  formatCompact,
+  formatInt,
+  formatMoney,
+  formatMonth,
+  formatPct,
+  totals,
+  type MarketRow,
+} from '../lib/market-query';
+
+const siteUrl = (Astro.site ?? new URL('https://ecommarketdata.com')).origin;
+const rows = dataset.rows as MarketRow[];
+
+const marketplaces = [...new Set(rows.map((row) => row.marketplace))].sort();
+const categories = [...new Set(rows.map((row) => row.category))].sort();
+const months = [...new Set(rows.map((row) => row.month))].sort();
+
+const categoryUnits = new Map<string, number>();
+for (const row of rows) {
+  categoryUnits.set(row.category, (categoryUnits.get(row.category) ?? 0) + row.units_sold);
+}
+
+const initial = totals(filterRows(rows, { marketplace: 'all', category: 'all', query: '' }));
+const initialGroups = byMarketCategory(rows);
+const maxShare = Math.max(...initialGroups.map((group) => group.share_pct), 1);
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebApplication',
+  name: 'ecommarketdata — Marketplace dashboard',
+  url: `${siteUrl}/dashboard/`,
+  applicationCategory: 'BusinessApplication',
+  operatingSystem: 'Web',
+  isAccessibleForFree: true,
+  description:
+    'Query marketplace unit sales, orders, GMV, seller counts and conversion by platform, industry and month.',
+  provider: { '@type': 'Organization', name: 'ecommarketdata', url: `${siteUrl}/` },
+};
+---
+
+<CabinetPage
+  title="Dashboard — ecommarketdata"
+  description="Query marketplace units sold by platform, industry and month. Free to use."
+  jsonLd={jsonLd}
+  wide={true}
+>
+  <section class="section">
+    <div class="container">
+      <p class="eyebrow">Dashboard</p>
+      <h1>Marketplace sales query</h1>
+      <p class="lede">
+        {rows.length} marketplace records. Filter by platform, industry or month
+        and read units sold. Figures are sample telemetry — the same view runs on
+        verified data in a custom engagement.
+      </p>
+
+      <div class="dash" id="dash">
+        <div class="dash-toolbar">
+          <div class="dash-search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="m20 20-3.5-3.5"></path>
+            </svg>
+            <input
+              id="f-search"
+              type="search"
+              placeholder="Search marketplace, industry or month…"
+              autocomplete="off"
+              aria-label="Search records"
+            />
+          </div>
+
+          <label class="dash-field">
+            Marketplace
+            <select id="f-market">
+              <option value="all">All marketplaces</option>
+              {marketplaces.map((market) => <option value={market}>{market}</option>)}
+            </select>
+          </label>
+
+
+          <button class="button button-ghost" id="export" type="button">Export CSV</button>
+        </div>
+
+        <div class="dash-pills" id="industry-pills" role="group" aria-label="Industry filter">
+          <button class="filter-pill active" type="button" data-cat="all">
+            All industries <span>{formatCompact(initial.units_sold)}</span>
+          </button>
+          {
+            categories.map((category) => (
+              <button class="filter-pill" type="button" data-cat={category}>
+                {category} <span>{formatCompact(categoryUnits.get(category) ?? 0)}</span>
+              </button>
+            ))
+          }
+        </div>
+
+        <div class="dash-chart">
+          <div class="dash-chart-head">
+            <span id="chart-title">Units sold by month</span>
+            <div class="chart-legend" id="chart-legend"></div>
+            <span class="dash-chart-note">
+              {months[0] && formatMonth(months[0])} – {months.at(-1) && formatMonth(months.at(-1) as string)}
+            </span>
+          </div>
+          <div class="chart-plot">
+            <svg id="chart" viewBox="0 0 900 260" role="img" aria-label="Monthly units sold by marketplace"></svg>
+            <div class="chart-tip" id="chart-tip" hidden></div>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table id="table">
+            <thead>
+              <tr>
+                <th class="rank">#</th>
+                <th id="th-first">Marketplace</th>
+                <th>Industry</th>
+                <th class="num">Units sold</th>
+                <th class="share-col">Share</th>
+                <th class="num">MoM</th>
+                <th class="num dim">GMV</th>
+                <th class="num dim">Orders</th>
+                <th class="num dim">AOV</th>
+                <th class="num dim">CVR</th>
+              </tr>
+            </thead>
+            <tbody>
+              {
+                initialGroups.slice(0, 24).map((group, index) => (
+                  <tr>
+                    <td class="rank">{index + 1}</td>
+                    <td class="strong">{group.marketplace}</td>
+                    <td>{group.category}</td>
+                    <td class="num strong">{formatInt(group.units_sold)}</td>
+                    <td class="share-col">
+                      <span class="share-bar">
+                        <i style={`width:${Math.max((group.share_pct / maxShare) * 100, 2).toFixed(1)}%`} />
+                      </span>
+                      <span class="share-val">{formatPct(group.share_pct)}</span>
+                    </td>
+                    <td class:list={['num', 'mom', group.mom_pct >= 0 ? 'up' : 'down']}>
+                      {group.mom_pct >= 0 ? '▲' : '▼'} {Math.abs(group.mom_pct).toFixed(1)}%
+                    </td>
+                    <td class="num dim">{formatMoney(group.gmv_usd)}</td>
+                    <td class="num dim">{formatInt(group.orders)}</td>
+                    <td class="num dim">${group.aov_usd.toFixed(2)}</td>
+                    <td class="num dim">{formatPct(group.cvr_pct)}</td>
+                  </tr>
+                ))
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <p class="fine-print" id="status">
+          Showing all marketplaces · all industries · {rows.length} records.
+        </p>
+      </div>
+    </div>
+  </section>
+</CabinetPage>
+
+<script>
+  import dataset from '../data/market-sample.json';
+  import {
+    byMarketCategory,
+    byMonthDetail,
+    seriesByMarketplace,
+    filterRows,
+    formatCompact,
+    formatInt,
+    formatMonth,
+    formatMoney,
+    formatPct,
+    } from '../lib/market-query';
+  import type { Filters, MarketRow } from '../lib/market-query';
+
+  const rows = dataset.rows as MarketRow[];
+
+  const state: { filters: Filters } = {
+    filters: { marketplace: 'all', category: 'all', query: '' },
+  };
+
+  const $ = <T extends Element>(selector: string) => document.querySelector(selector) as T | null;
+
+  const marketSelect = $<HTMLSelectElement>('#f-market');
+  const searchInput = $<HTMLInputElement>('#f-search');
+  const pills = [...document.querySelectorAll<HTMLButtonElement>('#industry-pills .filter-pill')];
+  const chart = $<SVGSVGElement>('#chart');
+  const tbody = $<HTMLTableSectionElement>('#table tbody');
+  const status = $('#status');
+  const chartTitle = $('#chart-title');
+  const firstTh = document.querySelector('#th-first');
+
+  const PALETTE = ['#1129e2', '#0aa5c6', '#d946a8', '#7c3aed', '#f59e0b'];
+
+  const plot = document.querySelector('.chart-plot') as HTMLElement | null;
+  const tip = document.querySelector('#chart-tip') as HTMLElement | null;
+
+  type Geom = {
+    months: string[];
+    series: { name: string; values: number[] }[];
+    xAt: (i: number) => number;
+    yAt: (v: number) => number;
+    w: number;
+    h: number;
+    padTop: number;
+    padBottom: number;
+    padLeft: number;
+    innerW: number;
+    innerH: number;
+  };
+
+  let geom: Geom | null = null;
+
+  function smoothPath(points: { x: number; y: number }[]): string {
+    if (points.length === 0) return '';
+    if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
+    let d = `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)}`;
+    for (let i = 0; i < points.length - 1; i++) {
+      const p0 = points[i - 1] ?? points[i];
+      const p1 = points[i];
+      const p2 = points[i + 1];
+      const p3 = points[i + 2] ?? p2;
+      const c1x = p1.x + (p2.x - p0.x) / 6;
+      const c1y = p1.y + (p2.y - p0.y) / 6;
+      const c2x = p2.x - (p3.x - p1.x) / 6;
+      const c2y = p2.y - (p3.y - p1.y) / 6;
+      d += ` C ${c1x.toFixed(1)} ${c1y.toFixed(1)}, ${c2x.toFixed(1)} ${c2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
+    }
+    return d;
+  }
+
+  function niceCeil(value: number): number {
+    const pow = Math.pow(10, Math.floor(Math.log10(value || 1)));
+    const n = value / pow;
+    const step = n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10;
+    return step * pow;
+  }
+
+  function renderChart(filtered: MarketRow[]) {
+    if (!chart) return;
+    const { months, series } = seriesByMarketplace(filtered);
+    const legend = document.querySelector('#chart-legend');
+
+    if (!months.length) {
+      chart.innerHTML = '';
+      if (legend) legend.innerHTML = '';
+      if (tip) tip.hidden = true;
+      geom = null;
+      return;
+    }
+
+    const w = Math.max(chart.clientWidth, 320);
+    const h = Math.max(chart.clientHeight, 180);
+    chart.setAttribute('viewBox', `0 0 ${w} ${h}`);
+
+    const padLeft = 56;
+    const padRight = 14;
+    const padTop = 14;
+    const padBottom = 30;
+    const innerW = w - padLeft - padRight;
+    const innerH = h - padTop - padBottom;
+
+    const rawMax = Math.max(...series.flatMap((item) => item.values), 1);
+    const max = niceCeil(rawMax);
+
+    const xAt = (i: number) =>
+      months.length === 1 ? padLeft + innerW / 2 : padLeft + (innerW * i) / (months.length - 1);
+    const yAt = (v: number) => padTop + innerH * (1 - v / max);
+
+    geom = { months, series, xAt, yAt, w, h, padTop, padBottom, padLeft, innerW, innerH };
+
+    const tickValues = [0, 0.25, 0.5, 0.75, 1].map((ratio) => max * ratio);
+
+    const grid = tickValues
+      .map((value) => {
+        const y = yAt(value);
+        return `<line x1="${padLeft}" y1="${y.toFixed(1)}" x2="${w - padRight}" y2="${y.toFixed(1)}" stroke="rgba(17,41,226,0.08)" stroke-width="1" />
+          <text x="${padLeft - 10}" y="${(y + 3.5).toFixed(1)}" text-anchor="end" font-size="10.5" fill="rgba(17,41,226,0.42)">${formatCompact(value)}</text>`;
+      })
+      .join('');
+
+    const slot = months.length > 1 ? innerW / (months.length - 1) : innerW;
+    const step = Math.max(1, Math.ceil(52 / slot));
+
+    const labels = months
+      .map((month, i) => {
+        if (i % step !== 0 && i !== months.length - 1) return '';
+        return `<text x="${xAt(i).toFixed(1)}" y="${h - 8}" text-anchor="middle" font-size="11" fill="rgba(17,41,226,0.45)">${formatMonth(month).split(' ')[0]}</text>`;
+      })
+      .join('');
+
+    const lines = series
+      .map((item, index) => {
+        const points = item.values.map((value, i) => ({ x: xAt(i), y: yAt(value) }));
+        const color = PALETTE[index % PALETTE.length];
+        return `<path class="chart-line" d="${smoothPath(points)}" fill="none" stroke="${color}"
+          stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"
+          style="animation-delay:${(index * 90).toFixed(0)}ms" />`;
+      })
+      .join('');
+
+    chart.innerHTML = `
+      <g>${grid}</g>
+      <g>${lines}</g>
+      <line id="chart-guide" x1="0" y1="${padTop}" x2="0" y2="${h - padBottom}"
+        stroke="rgba(17,41,226,0.32)" stroke-width="1" stroke-dasharray="3 3" opacity="0" />
+      <g id="chart-dots"></g>
+      <g>${labels}</g>
+      <rect id="chart-hit" x="${padLeft}" y="${padTop}" width="${innerW}" height="${innerH}"
+        fill="transparent" pointer-events="all" />
+    `;
+
+    if (legend) {
+      legend.innerHTML = series
+        .map(
+          (item, index) =>
+            `<span class="chart-key"><i style="background:${PALETTE[index % PALETTE.length]}"></i>${item.name}</span>`
+        )
+        .join('');
+    }
+  }
+
+  function clearHover() {
+    const guide = document.querySelector('#chart-guide');
+    const dots = document.querySelector('#chart-dots');
+    if (guide) guide.setAttribute('opacity', '0');
+    if (dots) dots.innerHTML = '';
+    if (tip) tip.hidden = true;
+  }
+
+  function handleHover(event: PointerEvent) {
+    if (!geom || !chart || !tip || !plot) return;
+
+    const rect = chart.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const ratio = (x - geom.padLeft) / geom.innerW;
+    const index = Math.max(0, Math.min(geom.months.length - 1, Math.round(ratio * (geom.months.length - 1))));
+
+    const gx = geom.xAt(index);
+    const guide = document.querySelector('#chart-guide');
+    if (guide) {
+      guide.setAttribute('x1', String(gx));
+      guide.setAttribute('x2', String(gx));
+      guide.setAttribute('opacity', '1');
+    }
+
+    const dots = document.querySelector('#chart-dots');
+    if (dots) {
+      dots.innerHTML = geom.series
+        .map((item, sIndex) => {
+          const color = PALETTE[sIndex % PALETTE.length];
+          const y = geom.yAt(item.values[index] ?? 0);
+          return `<circle cx="${gx.toFixed(1)}" cy="${y.toFixed(1)}" r="3.6" fill="${color}" stroke="#fff" stroke-width="1.6" />`;
+        })
+        .join('');
+    }
+
+    tip.innerHTML = `
+      <div class="chart-tip-head">${formatMonth(geom.months[index])}</div>
+      ${geom.series
+        .map(
+          (item, sIndex) =>
+            `<div class="chart-tip-row"><i style="background:${PALETTE[sIndex % PALETTE.length]}"></i><span class="name">${item.name}</span><span class="val">${formatInt(item.values[index] ?? 0)}</span></div>`
+        )
+        .join('')}
+      <div class="chart-tip-unit">units sold</div>
+    `;
+    tip.hidden = false;
+
+    const plotRect = plot.getBoundingClientRect();
+    const tipW = tip.offsetWidth;
+    const tipH = tip.offsetHeight;
+    let left = event.clientX - plotRect.left + 16;
+    let top = event.clientY - plotRect.top - tipH / 2;
+
+    if (left + tipW > plotRect.width - 8) left = event.clientX - plotRect.left - tipW - 16;
+    if (left < 8) left = 8;
+    top = Math.max(8, Math.min(top, plotRect.height - tipH - 8));
+
+    tip.style.left = `${left}px`;
+    tip.style.top = `${top}px`;
+  }
+
+  chart?.addEventListener('pointermove', handleHover);
+  chart?.addEventListener('pointerleave', clearHover);
+
+  function renderTable(filtered: MarketRow[], groups: ReturnType<typeof byMarketCategory>) {
+    if (!tbody) return;
+    const single = groups.length === 1;
+
+    if (single) {
+      if (firstTh) firstTh.textContent = 'Month';
+      const months = byMonthDetail(filtered);
+      const maxShare = Math.max(...months.map((item) => item.share_pct), 1);
+
+      tbody.innerHTML = months
+        .map(
+          (item, index) => `
+        <tr>
+          <td class="rank">${index + 1}</td>
+          <td class="strong">${formatMonth(item.month)}</td>
+          <td>${filtered[0]?.category ?? ''}</td>
+          <td class="num strong">${formatInt(item.units_sold)}</td>
+          <td class="share-col">
+            <span class="share-bar"><i style="width:${Math.max((item.share_pct / maxShare) * 100, 2).toFixed(1)}%"></i></span>
+            <span class="share-val">${formatPct(item.share_pct)}</span>
+          </td>
+          <td class="num mom ${item.mom_pct >= 0 ? 'up' : 'down'}">${item.mom_pct >= 0 ? '▲' : '▼'} ${Math.abs(item.mom_pct).toFixed(1)}%</td>
+          <td class="num dim">${formatMoney(item.gmv_usd)}</td>
+          <td class="num dim">${formatInt(item.orders)}</td>
+          <td class="num dim">$${item.aov_usd.toFixed(2)}</td>
+          <td class="num dim">${formatPct(item.cvr_pct)}</td>
+        </tr>`
+        )
+        .join('');
+      return;
+    }
+
+    if (firstTh) firstTh.textContent = 'Marketplace';
+    const maxShare = Math.max(...groups.map((group) => group.share_pct), 1);
+
+    tbody.innerHTML = groups
+      .slice(0, 60)
+      .map(
+        (group, index) => `
+        <tr>
+          <td class="rank">${index + 1}</td>
+          <td class="strong">${group.marketplace}</td>
+          <td>${group.category}</td>
+          <td class="num strong">${formatInt(group.units_sold)}</td>
+          <td class="share-col">
+            <span class="share-bar"><i style="width:${Math.max((group.share_pct / maxShare) * 100, 2).toFixed(1)}%"></i></span>
+            <span class="share-val">${formatPct(group.share_pct)}</span>
+          </td>
+          <td class="num mom ${group.mom_pct >= 0 ? 'up' : 'down'}">${group.mom_pct >= 0 ? '▲' : '▼'} ${Math.abs(group.mom_pct).toFixed(1)}%</td>
+          <td class="num dim">${formatMoney(group.gmv_usd)}</td>
+          <td class="num dim">${formatInt(group.orders)}</td>
+          <td class="num dim">$${group.aov_usd.toFixed(2)}</td>
+          <td class="num dim">${formatPct(group.cvr_pct)}</td>
+        </tr>`
+      )
+      .join('');
+  }
+
+  function syncPills() {
+    pills.forEach((pill) => {
+      const active = (pill.dataset.cat ?? 'all') === state.filters.category;
+      pill.classList.toggle('active', active);
+      pill.setAttribute('aria-pressed', String(active));
+    });
+  }
+
+  function update() {
+    const filtered = filterRows(rows, state.filters);
+    const groups = byMarketCategory(filtered);
+
+    renderChart(filtered);
+    renderTable(filtered, groups);
+    syncPills();
+
+
+    if (status) {
+      const marketLabel =
+        state.filters.marketplace === 'all' ? 'all marketplaces' : state.filters.marketplace;
+      const catLabel =
+        state.filters.category === 'all' ? 'all industries' : state.filters.category;
+      const q = state.filters.query.trim();
+      status.textContent = `Showing ${marketLabel} · ${catLabel}${q ? ` · “${q}”` : ''} · ${filtered.length} records.`;
+    }
+
+    const params = new URLSearchParams();
+    if (state.filters.marketplace !== 'all') params.set('market', state.filters.marketplace);
+    if (state.filters.category !== 'all') params.set('industry', state.filters.category);
+    if (state.filters.query.trim()) params.set('q', state.filters.query.trim());
+    const qs = params.toString();
+    history.replaceState(null, '', qs ? `?${qs}` : location.pathname);
+  }
+
+  function exportCsv() {
+    const filtered = filterRows(rows, state.filters);
+    const groups = byMarketCategory(filtered);
+    const single = groups.length === 1;
+
+    const header = single
+      ? 'month,industry,units_sold,gmv_usd,orders,aov_usd,cvr_pct,share_pct'
+      : 'marketplace,industry,units_sold,gmv_usd,orders,aov_usd,cvr_pct,share_pct';
+
+    const lines = single
+      ? byMonthDetail(filtered).map(
+          (item) =>
+            `${item.month},${filtered[0]?.category ?? ''},${item.units_sold},${item.gmv_usd.toFixed(0)},${item.orders},${item.aov_usd.toFixed(2)},${item.cvr_pct.toFixed(2)},${item.share_pct.toFixed(2)}`
+        )
+      : groups.map(
+          (group) =>
+            `${group.marketplace},${group.category},${group.units_sold},${group.gmv_usd.toFixed(0)},${group.orders},${group.aov_usd.toFixed(2)},${group.cvr_pct.toFixed(2)},${group.share_pct.toFixed(2)}`
+        );
+
+    const blob = new Blob([[header, ...lines].join('\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'ecommarketdata-query.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  marketSelect?.addEventListener('change', () => {
+    state.filters.marketplace = marketSelect.value;
+    update();
+  });
+
+  let searchTimer: number | undefined;
+  searchInput?.addEventListener('input', () => {
+    window.clearTimeout(searchTimer);
+    searchTimer = window.setTimeout(() => {
+      state.filters.query = searchInput.value;
+      update();
+    }, 180);
+  });
+
+  pills.forEach((pill) => {
+    pill.addEventListener('click', () => {
+      state.filters.category = pill.dataset.cat ?? 'all';
+      update();
+    });
+  });
+
+  $<HTMLButtonElement>('#export')?.addEventListener('click', exportCsv);
+
+  let resizeTimer: number | undefined;
+  window.addEventListener('resize', () => {
+    window.clearTimeout(resizeTimer);
+    resizeTimer = window.setTimeout(() => update(), 150);
+  });
+
+  const params = new URLSearchParams(location.search);
+  const marketParam = params.get('market');
+  const industryParam = params.get('industry');
+  const queryParam = params.get('q');
+
+  if (marketParam && marketSelect) {
+    state.filters.marketplace = marketParam;
+    marketSelect.value = marketParam;
+  }
+  if (industryParam) {
+    state.filters.category = industryParam;
+  }
+  if (queryParam && searchInput) {
+    state.filters.query = queryParam;
+    searchInput.value = queryParam;
+  }
+
+  update();
+</script>

@@ -1,0 +1,198 @@
+---
+import CabinetPage from '../layouts/CabinetPage.astro';
+
+const siteUrl = (Astro.site ?? new URL('https://ecommarketdata.com')).origin;
+const founderSite = 'https://nntisme.botslave.com/';
+
+const pillars = [
+  {
+    title: 'Data extraction',
+    body: 'Crawlers and pipelines that turn public marketplace pages into structured, dated, checkable data — with the method written down.',
+  },
+  {
+    title: 'AI agents',
+    body: 'Agents that read, classify, extract and act inside bounded permissions, with human approval wherever a mistake would be expensive.',
+  },
+  {
+    title: 'Software',
+    body: 'The full stack around the data: APIs, dashboards, internal tools and the automation that keeps them running.',
+  },
+];
+
+const principles = [
+  ['Dated', 'Every dataset carries the period it covers and the date it was last refreshed.'],
+  ['Sourced', 'A figure without a named source does not get published.'],
+  ['Documented', 'Method notes ship with the data, not after it.'],
+  ['Reversible', 'Automated changes are logged and can be undone. Corrections are visible, never silent.'],
+];
+
+const skills = [
+  'Python',
+  'TypeScript',
+  'Node.js',
+  'LLM orchestration',
+  'RAG',
+  'Playwright',
+  'FastAPI',
+  'PostgreSQL',
+  'Supabase',
+  'Docker',
+];
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'AboutPage',
+    '@id': `${siteUrl}/about/#webpage`,
+    name: 'About — ecommarketdata',
+    url: `${siteUrl}/about/`,
+    inLanguage: 'en-US',
+    mainEntity: { '@id': `${siteUrl}/#organization` },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    '@id': `${siteUrl}/#organization`,
+    name: 'ecommarketdata',
+    url: `${siteUrl}/`,
+    email: 'admin@ecommarketdata.com',
+    description:
+      'A data engineering and software studio building extraction systems, AI agents and the software around them.',
+    founder: {
+      '@type': 'Person',
+      name: 'Tu Ngoc Nguyen',
+      jobTitle: 'Founder & System Architect',
+      url: founderSite,
+      sameAs: [
+        founderSite,
+        'https://www.linkedin.com/in/nguyen-tu-17599929a/',
+        'https://github.com/tmk202',
+        'https://botslave.com/',
+      ],
+    },
+    knowsAbout: ['Web scraping', 'Data extraction', 'AI agents', 'Software engineering'],
+  },
+];
+---
+
+<CabinetPage
+  title="About — ecommarketdata"
+  description="ecommarketdata is a data engineering and software studio: extraction systems, AI agents and the software around them. Founded by Tu Ngoc Nguyen."
+  jsonLd={jsonLd}
+>
+  <section class="section">
+    <div class="container">
+      <p class="eyebrow">About</p>
+      <h1>A studio for marketplace data</h1>
+      <p class="lede">
+        ecommarketdata builds extraction systems, AI agents and the software
+        around them. We work with e-commerce teams that need numbers they can
+        defend in a meeting.
+      </p>
+
+      <div class="about-grid">
+        {
+          pillars.map((pillar) => (
+            <div class="about-card">
+              <h3>{pillar.title}</h3>
+              <p>{pillar.body}</p>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="prose">
+        <h2>How we work</h2>
+        <ul class="principle-list">
+          {
+            principles.map(([title, body]) => (
+              <li>
+                <strong>{title}.</strong> {body}
+              </li>
+            ))
+          }
+        </ul>
+        <p>
+          The short version: if a number cannot be sourced, it does not go out.
+          If a process cannot be checked, it does not get automated. If an agent
+          cannot be stopped, it does not get deployed.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <p class="eyebrow">Founder</p>
+
+      <div class="founder">
+        <img
+          class="founder-avatar"
+          src="/founder.jpg"
+          width="640"
+          height="640"
+          alt="Tu Ngoc Nguyen"
+          loading="lazy"
+          decoding="async"
+        />
+
+        <div class="founder-body">
+          <h2>Tu Ngoc Nguyen</h2>
+          <p class="founder-role">
+            Founder · System architect · Botslave
+          </p>
+
+          <blockquote>“I don't just learn, I build to solve.”</blockquote>
+
+          <p>
+            Tu is a software engineer working across AI automation, full-stack
+            development and data systems. He founded{' '}
+            <a href="https://botslave.com/" rel="noopener">Botslave</a>, a B2B
+            automation studio, and has built extraction pipelines, agent
+            platforms and real-time products for education and commerce —
+            including systems handling thousands of concurrent users.
+          </p>
+          <p>
+            ecommarketdata is the data side of that work: the place where the
+            numbers, the method and the tooling live in public.
+          </p>
+
+          <ul class="founder-links">
+            <li><a href={founderSite} rel="noopener">Personal site ↗</a></li>
+            <li><a href="https://botslave.com/" rel="noopener">Botslave ↗</a></li>
+            <li>
+              <a href="https://www.linkedin.com/in/nguyen-tu-17599929a/" rel="noopener">
+                LinkedIn ↗
+              </a>
+            </li>
+            <li><a href="https://github.com/tmk202" rel="noopener">GitHub ↗</a></li>
+          </ul>
+
+          <div class="chips">
+            {skills.map((skill) => <span class="chip">{skill}</span>)}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="prose">
+        <h2>Contact</h2>
+        <p>
+          Questions, data requests and partnership enquiries:{' '}
+          <a href="mailto:admin@ecommarketdata.com">admin@ecommarketdata.com</a>.
+        </p>
+        <p>
+          For scope and pricing, see <a href="/services/">services</a> and{' '}
+          <a href="/pricing/">pricing</a>.
+        </p>
+      </div>
+    </div>
+  </section>
+</CabinetPage>

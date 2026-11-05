@@ -1,0 +1,113 @@
+---
+import CabinetPage from '../../layouts/CabinetPage.astro';
+import BlogFilters from '../../components/BlogFilters.astro';
+import Pagination from '../../components/Pagination.astro';
+import { getCollection } from 'astro:content';
+import { BLOG_CATEGORIES } from '../../lib/blog-categories';
+
+export async function getStaticPaths({ paginate }) {
+  const posts = (await getCollection('blog')).sort(
+    (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+  );
+  return paginate(posts, { pageSize: 10 });
+}
+
+const { page } = Astro.props;
+const posts = page.data;
+
+const all = await getCollection('blog');
+const counts = BLOG_CATEGORIES.map((category) => ({
+  slug: category.slug,
+  label: category.label,
+  count: all.filter((post) => post.data.category === category.slug).length,
+}));
+
+const siteUrl = (Astro.site ?? new URL('https://ecommarketdata.com')).origin;
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Blog',
+    '@id': `${siteUrl}/blog/#blog`,
+    name: 'ecommarketdata — Notes on marketplace data',
+    url: `${siteUrl}/blog/`,
+    description:
+      'Practical notes on extraction, automation, AI workflows and data pipelines for e-commerce teams.',
+    inLanguage: 'en-US',
+    publisher: { '@type': 'Organization', name: 'ecommarketdata', url: `${siteUrl}/` },
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'Blog posts',
+    numberOfItems: posts.length,
+    itemListElement: posts.map((post, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: post.data.title,
+      url: `${siteUrl}/blog/${post.id}/`,
+    })),
+  },
+];
+
+const formatDate = (date: Date) =>
+  date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+---
+
+<CabinetPage
+  title="Blog — ecommarketdata"
+  description="Practical notes on extraction, automation, AI workflows and data pipelines for e-commerce teams."
+  canonical={page.currentPage > 1 ? `${siteUrl}/blog/${page.currentPage}/` : undefined}
+  jsonLd={jsonLd}
+>
+  <section class="section">
+    <div class="container">
+      <p class="eyebrow">Notes</p>
+      <h1>Notes on marketplace data</h1>
+      <p class="lede">
+        Short, practical writing about extraction, automation, agents and
+        pipelines — and how marketplace numbers get defined, measured and
+        misread.
+      </p>
+
+      <BlogFilters counts={counts} total={all.length} />
+
+      <div class="post-list">
+        {
+          posts.map((post) => (
+            <a class="post-row" href={`/blog/${post.id}/`}>
+              <img
+                class="post-thumb"
+                src={`/thumbs/${post.id}.webp`}
+                width="800"
+                height="450"
+                alt=""
+                loading="lazy"
+                decoding="async"
+              />
+              <span class="post-body">
+                <time class="post-date" datetime={post.data.pubDate.toISOString()}>
+                  {formatDate(post.data.pubDate)}
+                </time>
+                <strong>{post.data.title}</strong>
+                <span class="post-desc">{post.data.description}</span>
+                <span class="post-tags">
+                  <span class="tag">
+                    {counts.find((c) => c.slug === post.data.category)?.label}
+                  </span>
+                </span>
+              </span>
+            </a>
+          ))
+        }
+      </div>
+
+      <Pagination
+        currentPage={page.currentPage}
+        lastPage={page.lastPage}
+        prevUrl={page.url.prev}
+        nextUrl={page.url.next}
+      />
+    </div>
+  </section>
+</CabinetPage>

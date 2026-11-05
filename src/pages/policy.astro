@@ -1,0 +1,234 @@
+---
+import CabinetPage from '../layouts/CabinetPage.astro';
+
+const siteUrl = (Astro.site ?? new URL('https://ecommarketdata.com')).origin;
+const updated = '5 November 2026';
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    '@id': `${siteUrl}/policy/#webpage`,
+    name: 'Policies — ecommarketdata',
+    url: `${siteUrl}/policy/`,
+    dateModified: '2026-11-05',
+    inLanguage: 'en-US',
+    publisher: {
+      '@type': 'Organization',
+      '@id': `${siteUrl}/#organization`,
+      name: 'ecommarketdata',
+      url: `${siteUrl}/`,
+      email: 'admin@ecommarketdata.com',
+      description:
+        'Data extraction, AI agents and software engineering for e-commerce teams.',
+    },
+  },
+];
+
+const contents = [
+  { id: 'scope', label: 'Scope' },
+  { id: 'privacy', label: 'Privacy' },
+  { id: 'data-sourcing', label: 'Data sourcing and crawling' },
+  { id: 'ai-systems', label: 'AI systems and oversight' },
+  { id: 'client-work', label: 'Client work and IP' },
+  { id: 'cookies', label: 'Cookies' },
+  { id: 'terms', label: 'Terms of use' },
+  { id: 'licensing', label: 'Licensing and corrections' },
+  { id: 'security', label: 'Security and retention' },
+  { id: 'contact', label: 'Contact' },
+];
+---
+
+<CabinetPage
+  title="Policies — ecommarketdata"
+  description="How ecommarketdata handles privacy, crawling, AI systems, client deliverables, licensing and corrections."
+  jsonLd={jsonLd}
+>
+  <section class="section">
+    <div class="container">
+      <p class="eyebrow">Policy</p>
+      <h1>Policies</h1>
+      <p class="lede">
+        ecommarketdata is a data engineering and software studio. We build
+        extraction systems, AI agents and the software around them. These
+        policies explain how we work and what you can expect from us.
+      </p>
+      <p class="fine-print">Last updated {updated}.</p>
+
+      <nav class="toc" aria-label="Policy contents">
+        <ul>
+          {
+            contents.map((item) => (
+              <li>
+                <a href={`#${item.id}`}>{item.label}</a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+
+      <div class="prose">
+        <h2 id="scope">Scope</h2>
+        <p>
+          This page covers this website, our published datasets and our general
+          way of working. A signed engagement letter or statement of work takes
+          precedence where it differs from what is written here.
+        </p>
+        <p>
+          We work with businesses, not consumers. If you are an individual
+          looking for personal data we hold about you, see{' '}
+          <a href="#privacy">Privacy</a>.
+        </p>
+
+        <h2 id="privacy">Privacy</h2>
+        <p>
+          We collect the minimum needed to run this site and to deliver work. If
+          you email us, we keep the message and your reply address so we can
+          answer and follow up. For paid engagements we keep business contact
+          details, invoices and project records.
+        </p>
+        <p>
+          We do not sell personal data, and we do not include personal data in
+          published datasets. Marketplace figures are reported at market,
+          category, listing or seller level — not at the level of an identifiable
+          person.
+        </p>
+        <p>
+          Where we process personal data on behalf of a client, we act as a
+          processor under their instructions, under a written data processing
+          agreement. Where we process data for our own operations, we act as a
+          controller and apply the same minimisation rules.
+        </p>
+        <p>
+          You can ask us what we hold about you, request a correction, or ask us
+          to delete correspondence at{' '}
+          <a href="mailto:admin@ecommarketdata.com">admin@ecommarketdata.com</a>.
+          We aim to respond within 30 days.
+        </p>
+
+        <h2 id="data-sourcing">Data sourcing and crawling</h2>
+        <p>
+          Extraction is what we do, so we hold ourselves to a clear standard.
+          Our crawlers:
+        </p>
+        <ul>
+          <li>Respect <code>robots.txt</code> directives and published rate limits.</li>
+          <li>Read only publicly accessible pages unless a client has authorised access in writing.</li>
+          <li>Never bypass authentication, paywalls or access controls.</li>
+          <li>Identify themselves honestly and provide a contact for site owners.</li>
+          <li>Do not collect personal data for resale, profiling or advertising.</li>
+        </ul>
+        <p>
+          Where a platform provides an official API or data feed, we prefer it
+          over extraction, and we say so in the engagement. If a site owner asks
+          us to stop accessing their pages, we stop.
+        </p>
+        <p>
+          Clients are responsible for confirming that the data they ask us to
+          collect may lawfully be collected for their intended use. We will flag
+          a request we believe is out of bounds before starting work.
+        </p>
+
+        <h2 id="ai-systems">AI systems and oversight</h2>
+        <p>
+          We build AI agents that read, classify, extract and act on data. Every
+          agent we ship runs with bounded permissions: the tools it may call are
+          declared, logged and limited to the task.
+        </p>
+        <ul>
+          <li>Agents do not make irreversible changes without an approval step.</li>
+          <li>Actions that affect money, customers or live listings require human sign-off.</li>
+          <li>Every tool call is logged with its input, output and initiating request.</li>
+          <li>Model outputs are treated as suggestions until validated by deterministic checks.</li>
+        </ul>
+        <p>
+          We do not use client data to train third-party foundation models, and
+          we do not send confidential material to external services without
+          written agreement.
+        </p>
+
+        <h2 id="client-work">Client work and IP</h2>
+        <p>
+          On completion and final payment, clients own the deliverables created
+          specifically for them: custom code, pipelines, prompts, documentation
+          and the data produced for the engagement.
+        </p>
+        <p>
+          We retain ownership of our pre-existing libraries, internal tooling and
+          reusable components. Where those are embedded in a deliverable, the
+          client receives a perpetual, non-exclusive licence to use them as part
+          of that deliverable.
+        </p>
+        <p>
+          Both sides keep the other's confidential information confidential, and
+          we do not name clients publicly without permission.
+        </p>
+
+        <h2 id="cookies">Cookies</h2>
+        <p>
+          This site does not set advertising cookies and does not run third-party
+          tracking scripts. Essential cookies may be used by our hosting provider
+          for security and load balancing. If we add analytics later, this section
+          will name the tool, state what it records and explain how to opt out
+          before it is enabled.
+        </p>
+
+        <h2 id="terms">Terms of use</h2>
+        <p>
+          Published datasets are provided for research and commercial analysis.
+          You may quote figures with attribution to ecommarketdata and a link to
+          the dataset page. You may not redistribute the raw dataset, resell it,
+          or use it to build a competing data product without a written licence.
+        </p>
+        <p>
+          Figures are best-available estimates unless the page states otherwise.
+          They are not audited financial statements and are not investment,
+          legal or tax advice.
+        </p>
+        <p>
+          You may not use this site or our services to build a system that breaks
+          the law, circumvents access controls, or harms people. We may refuse or
+          end an engagement that asks us to do so.
+        </p>
+
+        <h2 id="licensing">Licensing and corrections</h2>
+        <p>
+          Browsing and quoting published data is free with attribution. Custom
+          engagements define their own licence in writing: internal use,
+          client-facing use, redistribution or commercial embedding.
+        </p>
+        <p>
+          If you believe a figure is wrong, email us with the dataset page and the
+          source you are comparing against. Verified corrections are applied and
+          noted on the page with the date they changed. We do not silently
+          overwrite history.
+        </p>
+
+        <h2 id="security">Security and retention</h2>
+        <p>
+          Access to client systems and data is scoped per person and per project,
+          with credentials stored in a secrets manager rather than in code. We
+          keep audit logs for changes made by automated systems.
+        </p>
+        <p>
+          We retain project records for as long as needed to support the work and
+          meet accounting obligations, then delete or anonymise them. If you need
+          a specific retention period, put it in the engagement letter and we will
+          follow it.
+        </p>
+
+        <h2 id="contact">Contact</h2>
+        <p>
+          Questions about these policies, data requests, crawler access or
+          corrections:{' '}
+          <a href="mailto:admin@ecommarketdata.com">admin@ecommarketdata.com</a>.
+        </p>
+
+        <p class="fine-print">
+          This page is a working document and should be reviewed against the legal
+          requirements of the jurisdictions you operate in before it is relied on.
+        </p>
+      </div>
+    </div>
+  </section>
+</CabinetPage>

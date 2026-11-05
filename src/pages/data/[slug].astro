@@ -4,8 +4,9 @@
  * - Reads JSON datasets from `src/data/*.json` and pre-renders `/data/[slug]` at build time (`0 JS` needed for SEO content)
  * - Injects Canonical URL, OpenGraph, Twitter Cards, and Schema.org `Dataset` + `BreadcrumbList` JSON-LD
  */
-import '../../styles/global.css';
-import { ALL_PLATFORM_DATASETS, CuriosityArtifact } from '../../data/ecomCabinetData';
+import '../../styles/cabinet.css';
+import { ALL_PLATFORM_DATASETS } from '../../data/ecomCabinetData';
+import type { CuriosityArtifact } from '../../data/ecomCabinetData';
 import { buildDatasetJsonLd, SITE_ORIGIN } from '../../seo/seoHead';
 
 export function getStaticPaths() {

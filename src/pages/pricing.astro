@@ -1,0 +1,151 @@
+---
+import CabinetPage from '../layouts/CabinetPage.astro';
+
+const siteUrl = (Astro.site ?? new URL('https://ecommarketdata.com')).origin;
+
+const plans = [
+  {
+    name: 'Reader',
+    price: '$0',
+    cadence: 'forever',
+    summary: 'Browse every published dataset, including the method notes.',
+    features: [
+      'All published dataset pages',
+      'Method and source notes',
+      'Citation guidance',
+      'Email corrections',
+    ],
+    cta: { label: 'Browse datasets', href: '/data/' },
+    featured: false,
+  },
+  {
+    name: 'Custom',
+    price: 'Quoted',
+    cadence: 'per engagement',
+    summary: 'Full tables, custom research, feeds and a licence — quoted to scope.',
+    features: [
+      'Everything in Reader',
+      'Full row-level data and exports',
+      'Custom research scope',
+      'API or scheduled data feed',
+      'Commercial reuse licence',
+      'Named support contact',
+    ],
+    cta: { label: 'Talk to us', href: 'mailto:admin@ecommarketdata.com?subject=Custom%20engagement' },
+    featured: true,
+  },
+];
+
+const faqs = [
+  {
+    q: 'What exactly is included in a dataset?',
+    a: 'Each dataset page states its metric, market, period and last-updated date. A custom engagement adds the full row-level table, a source log and the method note used to produce it.',
+  },
+  {
+    q: 'Can I publish these numbers in a report or deck?',
+    a: 'Reader data may be quoted with attribution and a link to the dataset page. Redistributing the raw dataset, embedding it in a product, or building a competing data product requires a written licence agreed in the engagement.',
+  },
+  {
+    q: 'How often is data refreshed?',
+    a: 'Published pages carry a last-updated date. Refresh cadence for custom work is agreed in the engagement, from one-off collection to a scheduled feed.',
+  },
+  {
+    q: 'What happens if a figure is wrong?',
+    a: 'Verified corrections are applied to the page and noted with the date they changed. We do not silently overwrite history.',
+  },
+  {
+    q: 'How is custom pricing decided?',
+    a: 'By scope: data volume, number of sources, refresh cadence, licence terms and support window. There is no fixed list price, so every quote is tied to a defined deliverable.',
+  },
+];
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'OfferCatalog',
+    '@id': `${siteUrl}/pricing/#catalog`,
+    name: 'ecommarketdata plans',
+    url: `${siteUrl}/pricing/`,
+    itemListElement: plans.map((plan) => ({
+      '@type': 'Offer',
+      name: plan.name,
+      description: plan.summary,
+      priceCurrency: plan.price.startsWith('$') ? 'USD' : undefined,
+      price: plan.price.startsWith('$') ? plan.price.replace('$', '') : undefined,
+      url: `${siteUrl}/pricing/`,
+    })),
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    '@id': `${siteUrl}/pricing/#faq`,
+    mainEntity: faqs.map((faq) => ({
+      '@type': 'Question',
+      name: faq.q,
+      acceptedAnswer: { '@type': 'Answer', text: faq.a },
+    })),
+  },
+];
+---
+
+<CabinetPage
+  title="Pricing — ecommarketdata"
+  description="Plans for marketplace data: free browsing, an analyst subscription with full CSV exports, and custom enterprise feeds and research."
+  jsonLd={jsonLd}
+>
+  <section class="section">
+    <div class="container">
+      <p class="eyebrow">Pricing</p>
+      <h1>Plans</h1>
+      <p class="lede">
+        The catalog is free to read. Everything beyond that is scoped and
+        quoted per engagement — no fixed tiers, no shelfware.
+      </p>
+
+      <div class="price-grid price-grid-2">
+        {
+          plans.map((plan) => (
+            <div class={plan.featured ? 'plan plan-featured' : 'plan'}>
+              <h2>{plan.name}</h2>
+              <p class="plan-price">
+                {plan.price} <span>{plan.cadence}</span>
+              </p>
+              <p class="plan-summary">{plan.summary}</p>
+              <ul class="check-list">
+                {plan.features.map((feature) => (
+                  <li>{feature}</li>
+                ))}
+              </ul>
+              <a class={plan.featured ? 'button' : 'button button-ghost'} href={plan.cta.href}>
+                {plan.cta.label}
+              </a>
+            </div>
+          ))
+        }
+      </div>
+
+      <p class="fine-print">
+        All use is subject to the <a href="/policy/">policies</a>. Custom pricing
+        depends on scope, refresh cadence and licence terms.
+      </p>
+    </div>
+  </section>
+
+  <section class="section" style="border-top:1px solid var(--line)">
+    <div class="container">
+      <div class="prose">
+        <h2>Questions</h2>
+        <div class="faq">
+          {
+            faqs.map((faq) => (
+              <details class="faq-item">
+                <summary>{faq.q}</summary>
+                <p>{faq.a}</p>
+              </details>
+            ))
+          }
+        </div>
+      </div>
+    </div>
+  </section>
+</CabinetPage>

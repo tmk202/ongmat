@@ -1,8 +1,5 @@
-import {
-  ALL_PLATFORM_DATASETS,
-  CuriosityArtifact,
-  NavSectionContent,
-} from '../data/ecomCabinetData';
+import { ALL_PLATFORM_DATASETS } from '../data/ecomCabinetData';
+import type { CuriosityArtifact, NavSectionContent } from '../data/ecomCabinetData';
 
 export const SITE_ORIGIN = 'https://ecommarketdata.com';
 export const DEFAULT_TITLE =
@@ -51,11 +48,6 @@ export function buildHomeJsonLd() {
         name: 'ecommarketdata — The Curiosity Cabinet',
         publisher: { '@id': `${SITE_ORIGIN}/#organization` },
         inLanguage: 'en-US',
-        potentialAction: {
-          '@type': 'SearchAction',
-          target: `${SITE_ORIGIN}/?q={search_term_string}`,
-          'query-input': 'required name=search_term_string',
-        },
       },
       {
         '@type': 'DataCatalog',

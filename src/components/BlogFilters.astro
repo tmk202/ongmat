@@ -1,0 +1,26 @@
+---
+interface Props {
+  counts: { slug: string; label: string; count: number }[];
+  total: number;
+  active?: string;
+}
+
+const { counts, total, active } = Astro.props;
+---
+
+<nav class="blog-filters" aria-label="Blog categories">
+  <a class:list={['filter-pill', { active: !active }]} href="/blog/" aria-current={!active ? 'page' : undefined}>
+    All <span>{total}</span>
+  </a>
+  {
+    counts.map((category) => (
+      <a
+        class:list={['filter-pill', { active: active === category.slug }]}
+        href={`/blog/category/${category.slug}/`}
+        aria-current={active === category.slug ? 'page' : undefined}
+      >
+        {category.label} <span>{category.count}</span>
+      </a>
+    ))
+  }
+</nav>

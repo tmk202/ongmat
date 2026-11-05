@@ -1,8 +1,6 @@
 node_modules/
-build/
 dist/
-coverage/
+.wrangler/
+.astro/
+.env
 .DS_Store
-*.log
-.env*
-!.env.example

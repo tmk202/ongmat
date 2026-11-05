@@ -1,0 +1,154 @@
+---
+import CabinetPage from '../layouts/CabinetPage.astro';
+
+const siteUrl = (Astro.site ?? new URL('https://ecommarketdata.com')).origin;
+
+const services = [
+  {
+    anchor: 'web-scraping-data-extraction',
+    name: 'Web Scraping & Data Extraction',
+    description:
+      'Structured data pulled from marketplaces, catalogs and public sources — cleaned, deduplicated and delivered on a schedule you can rely on.',
+    points: [
+      'Marketplace and catalog extraction',
+      'Block and rate-limit handling',
+      'Schema normalisation',
+      'Scheduled refreshes',
+    ],
+  },
+  {
+    anchor: 'business-process-automation',
+    name: 'Business Process Automation',
+    description:
+      'Remove the manual steps between data and action: pricing updates, listing sync, stock checks, approvals and recurring reporting.',
+    points: [
+      'Workflow mapping and handover',
+      'System-to-system integration',
+      'Approval gates',
+      'Audit trail on every change',
+    ],
+  },
+  {
+    anchor: 'ai-agents-intelligent-workflows',
+    name: 'AI Agents & Intelligent Workflows',
+    description:
+      'Agents that read, classify, extract and act on your data — with bounded permissions and human review wherever a mistake would be expensive.',
+    points: [
+      'Document and listing extraction',
+      'Classification and tagging',
+      'Human-in-the-loop review',
+      'Bounded tool permissions',
+    ],
+  },
+  {
+    anchor: 'custom-apis-data-pipelines',
+    name: 'Custom APIs & Data Pipelines',
+    description:
+      'Typed endpoints and pipelines that move data into your warehouse or dashboard, without anyone exporting a spreadsheet on Friday night.',
+    points: [
+      'REST or GraphQL endpoints',
+      'Scheduled ETL jobs',
+      'Stable schema and versioning',
+      'Access controls and logging',
+    ],
+  },
+];
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Service',
+  '@id': `${siteUrl}/services/#service`,
+  name: 'E-commerce marketplace data services',
+  serviceType: 'Market data and research',
+  provider: {
+    '@type': 'Organization',
+    name: 'ecommarketdata',
+    url: `${siteUrl}/`,
+    email: 'admin@ecommarketdata.com',
+  },
+  areaServed: 'Worldwide',
+  description:
+    'Marketplace datasets, custom research, data feeds and category reports for e-commerce teams.',
+  hasOfferCatalog: {
+    '@type': 'OfferCatalog',
+    name: 'Services',
+    itemListElement: services.map((service) => ({
+      '@type': 'Offer',
+      itemOffered: { '@type': 'Service', name: service.name, description: service.description },
+    })),
+  },
+};
+---
+
+<CabinetPage
+  title="Services — ecommarketdata"
+  description="Marketplace datasets, custom research, scheduled data feeds and category reports for e-commerce teams. Scoped, sourced and documented."
+  jsonLd={jsonLd}
+>
+  <section class="section">
+    <div class="container">
+      <p class="eyebrow">Services</p>
+      <h1>Marketplace data, scoped to a decision</h1>
+      <p class="lede">
+        We publish a public catalog and take on scoped engineering work:
+        extraction, automation, agents and pipelines. Every deliverable states its
+        definition, scope and method.
+      </p>
+
+      <div class="services-grid">
+        {
+          services.map((service, index) => (
+            <div class="card svc" id={service.anchor}>
+              <span class="svc-num">{String(index + 1).padStart(2, '0')}</span>
+              <h3>{service.name}</h3>
+              <p>{service.description}</p>
+              <ul class="check-list">
+                {service.points.map((point) => (
+                  <li>{point}</li>
+                ))}
+              </ul>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="border-top:1px solid var(--line)">
+    <div class="container">
+      <div class="prose">
+        <h2>How an engagement works</h2>
+        <ol>
+          <li>
+            <strong>Scope.</strong> We agree on one metric, one market and one
+            period before any collection starts.
+          </li>
+          <li>
+            <strong>Collect.</strong> Data is gathered from public marketplace
+            signals, platform statements and structured observation.
+          </li>
+          <li>
+            <strong>Verify.</strong> Figures are checked against the previous
+            period and against a named source.
+          </li>
+          <li>
+            <strong>Deliver.</strong> You receive the dataset, a source log and a
+            short method note. Corrections are versioned, not silent.
+          </li>
+        </ol>
+
+        <h2>What we do not do</h2>
+        <p>
+          We do not resell scraped personal data, we do not publish figures we
+          cannot source, and we do not present estimates as audited numbers.
+        </p>
+
+        <p>
+          See <a href="/pricing/">pricing</a> or email{' '}
+          <a href="mailto:admin@ecommarketdata.com">admin@ecommarketdata.com</a>
+          with the question you need answered.
+        </p>
+      </div>
+    </div>
+  </section>
+</CabinetPage>

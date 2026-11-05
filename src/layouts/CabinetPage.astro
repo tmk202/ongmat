@@ -1,0 +1,135 @@
+---
+import '../styles/cabinet-page.css';
+
+interface Props {
+  title: string;
+  description: string;
+  canonical?: string;
+  jsonLd?: Record<string, unknown> | Record<string, unknown>[];
+  noindex?: boolean;
+  ogImage?: string;
+  ogImageAlt?: string;
+  ogType?: 'website' | 'article';
+  wide?: boolean;
+}
+
+const {
+  title,
+  description,
+  canonical,
+  jsonLd,
+  noindex = false,
+  ogImage = '/og-default.png',
+  ogImageAlt = title,
+  ogType = 'website',
+  wide = false,
+} = Astro.props;
+
+const siteUrl = Astro.site ?? new URL('https://ecommarketdata.com');
+const canonicalUrl = canonical ?? new URL(Astro.url.pathname, siteUrl).toString();
+const ogImageUrl = new URL(ogImage, siteUrl).toString();
+const blocks = jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [];
+
+const nav = [
+  { href: '/', label: 'home' },
+  { href: '/services/', label: 'services' },
+  { href: '/pricing/', label: 'pricing' },
+  { href: '/dashboard/', label: 'dashboard' },
+  { href: '/blog/', label: 'blog' },
+  { href: '/policy/', label: 'policy' },
+  { href: '/about/', label: 'about' },
+];
+
+const current = Astro.url.pathname;
+const isActive = (href: string) =>
+  href === '/' ? current === '/' : current.startsWith(href);
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta
+      name="robots"
+      content={noindex ? 'noindex,follow' : 'index,follow,max-image-preview:large'}
+    />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:site_name" content="ecommarketdata" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:height" content="630" />
+    <meta property="og:image:alt" content={ogImageAlt} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImageUrl} />
+    <meta name="twitter:image:alt" content={ogImageAlt} />
+    {
+      blocks.map((block) => (
+        <script type="application/ld+json" set:html={JSON.stringify(block)} />
+      ))
+    }
+  </head>
+  <body class:list={[{ 'doc-wide': wide }]}>
+    <header class="doc-header">
+      <div class="doc-header-inner">
+        <a class="doc-brand" href="/">
+          <svg class="doc-mark" viewBox="0 0 28 22" aria-hidden="true" focusable="false">
+            <path
+              d="M1 4.5A2.5 2.5 0 0 1 3.5 2h6.2c.7 0 1.3.3 1.8.8l1.6 1.7h11.4A2.5 2.5 0 0 1 27 7v11.5A2.5 2.5 0 0 1 24.5 21h-21A2.5 2.5 0 0 1 1 18.5v-14Z"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.2"
+              stroke-linejoin="round"
+            />
+          </svg>
+          <span>ecommarketdata</span>
+        </a>
+        <nav class="doc-nav" aria-label="Primary Navigation">
+          {
+            nav.map((item) => (
+              <a
+                href={item.href}
+                class:list={['doc-nav-link', { active: isActive(item.href) }]}
+                aria-current={isActive(item.href) ? 'page' : undefined}
+              >
+                {item.label}
+              </a>
+            ))
+          }
+        </nav>
+      </div>
+    </header>
+
+    <main class="doc-main">
+      <slot />
+    </main>
+
+    <footer class="doc-footer">
+      <div class="doc-footer-inner">
+        <span>© {new Date().getFullYear()} ecommarketdata</span>
+        <nav class="doc-footer-links" aria-label="Footer">
+          <a href="/data/">data</a>
+          <a href="/services/">services</a>
+          <a href="/pricing/">pricing</a>
+          <a href="/dashboard/">dashboard</a>
+          <a href="/blog/">blog</a>
+          <a href="/policy/">policy</a>
+          <a href="/methodology/">methodology</a>
+          <a href="/about/">about</a>
+        </nav>
+      </div>
+    </footer>
+  </body>
+</html>

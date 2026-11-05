@@ -1,0 +1,40 @@
+---
+import CabinetPage from '../../layouts/CabinetPage.astro';
+import { ALL_PLATFORM_DATASETS } from '../../data/ecomCabinetData';
+
+const title = 'Ecommerce datasets — ecommarketdata';
+const description =
+  'Browse verified e-commerce marketplace datasets: GMV, seller telemetry, pricing and conversion benchmarks across Shopee, Amazon, TikTok Shop, Lazada and Etsy.';
+
+const datasets = ALL_PLATFORM_DATASETS;
+---
+
+<CabinetPage title={title} description={description}>
+  <section class="section">
+    <div class="container">
+      <p class="eyebrow">Datasets</p>
+      <h1>All datasets</h1>
+      <p class="lede">
+        Every dataset is dated, scoped to a market and open to read. Sorted by
+        most recently updated.
+      </p>
+
+      <div class="grid">
+        {
+          datasets.map((dataset) => (
+            <a class="card" href={`/data/${dataset.slug}/`}>
+              <span class="badge">{dataset.category}</span>
+              <h3>{dataset.title}</h3>
+              <p>{dataset.summary}</p>
+              <span class="meta" style="margin:0">
+                <span>{dataset.platformName}</span>
+                <span>{dataset.temporalCoverage}</span>
+                <span>Updated {dataset.lastModified}</span>
+              </span>
+            </a>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+</CabinetPage>

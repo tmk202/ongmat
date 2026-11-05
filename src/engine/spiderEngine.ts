@@ -1,4 +1,4 @@
-import { CabinetAssets } from '../assets/cabinetSprites';
+import type { CabinetAssets } from '../assets/cabinetSprites';
 
 interface Vec2 {
   x: number;

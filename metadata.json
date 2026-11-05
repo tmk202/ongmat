@@ -1,6 +1,0 @@
-{
-  "name": "ecommarketdata — The E-Commerce Curiosity Cabinet",
-  "description": "An interactive curiosity cabinet and deep e-commerce market intelligence archive for enterprises, featuring a physics-driven web-spinning spider.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}

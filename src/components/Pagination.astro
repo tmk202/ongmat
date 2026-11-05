@@ -1,0 +1,36 @@
+---
+interface Props {
+  currentPage: number;
+  lastPage: number;
+  prevUrl?: string;
+  nextUrl?: string;
+}
+
+const { currentPage, lastPage, prevUrl, nextUrl } = Astro.props;
+---
+
+{
+  lastPage > 1 && (
+    <nav class="pager" aria-label="Pagination">
+      {prevUrl ? (
+        <a class="pager-btn" href={prevUrl} rel="prev">
+          ← Prev
+        </a>
+      ) : (
+        <span class="pager-btn pager-disabled">← Prev</span>
+      )}
+
+      <span class="pager-info">
+        Page {currentPage} of {lastPage}
+      </span>
+
+      {nextUrl ? (
+        <a class="pager-btn" href={nextUrl} rel="next">
+          Next →
+        </a>
+      ) : (
+        <span class="pager-btn pager-disabled">Next →</span>
+      )}
+    </nav>
+  )
+}

@@ -1,11 +1,11 @@
 ---
 /**
  * Astro 7 Static Entry Page (`src/pages/index.astro`)
- * - Pure CSS (`src/styles/global.css`) — No Tailwind
+ * - Pure CSS (`src/styles/cabinet.css`) — No Tailwind
  * - Zero framework JS overhead: mounts vanilla `SpiderCabinetEngine` directly on `<canvas>`
  * - Static semantic HTML + Schema.org `DataCatalog` JSON-LD for https://ecommarketdata.com
  */
-import '../styles/global.css';
+import '../styles/cabinet.css';
 import shopeePod from '../data/shopee-tiktok-gmv-pod.json';
 import amazonTerminal from '../data/amazon-shopify-buybox-terminal.json';
 import tiktokVault from '../data/tiktok-shop-live-telemetry.json';
@@ -46,10 +46,30 @@ const jsonLd = JSON.stringify(buildHomeJsonLd());
           </a>
           <nav class="nav-links" aria-label="Primary Navigation">
             <a href="/" class="nav-link active" data-web-anchor>home</a>
-            <a href="/data/shopee-tiktok-gmv-pod" class="nav-link" data-web-anchor>shopee</a>
-            <a href="/data/amazon-shopify-buybox-terminal" class="nav-link" data-web-anchor>amazon</a>
-            <a href="/data/tiktok-shop-live-telemetry" class="nav-link" data-web-anchor>tiktok shop</a>
-            <a href="/data/etsy-lazada-omni-hub" class="nav-link" data-web-anchor>etsy</a>
+            <div class="nav-drop">
+              <button
+                type="button"
+                class="nav-link nav-drop-trigger"
+                aria-expanded="false"
+                aria-controls="services-menu"
+                data-web-anchor
+              >
+                services
+              </button>
+              <div class="nav-drop-panel" id="services-menu">
+                <span class="nav-drop-label">Services</span>
+                <a href="/services/#web-scraping-data-extraction">Web Scraping &amp; Data Extraction</a>
+                <a href="/services/#business-process-automation">Business Process Automation</a>
+                <a href="/services/#ai-agents-intelligent-workflows">AI Agents &amp; Intelligent Workflows</a>
+                <a href="/services/#custom-apis-data-pipelines">Custom APIs &amp; Data Pipelines</a>
+                <a class="nav-drop-all" href="/services/">All services →</a>
+              </div>
+            </div>
+            <a href="/pricing/" class="nav-link" data-web-anchor>pricing</a>
+            <a href="/dashboard/" class="nav-link" data-web-anchor>dashboard</a>
+            <a href="/blog/" class="nav-link" data-web-anchor>blog</a>
+            <a href="/policy/" class="nav-link" data-web-anchor>policy</a>
+            <a href="/about/" class="nav-link" data-web-anchor>about</a>
           </nav>
         </header>
 
@@ -79,6 +99,18 @@ const jsonLd = JSON.stringify(buildHomeJsonLd());
             {datasets.map((d) => (
               <li><a href={`/data/${d.slug}`}>{d.title} — {d.seoDescription}</a></li>
             ))}
+          </ul>
+        </nav>
+
+        <nav class="seo-catalog-nav" aria-label="Site sections">
+          <ul>
+            <li><a href="/services/">Services — marketplace data, research and feeds</a></li>
+            <li><a href="/pricing/">Pricing — plans and licences</a></li>
+            <li><a href="/dashboard/">Dashboard — query marketplace data</a></li>
+            <li><a href="/blog/">Blog — notes on marketplace data</a></li>
+            <li><a href="/policy/">Policies — privacy, terms and licensing</a></li>
+            <li><a href="/methodology/">Methodology — how data is collected and verified</a></li>
+            <li><a href="/about/">About ecommarketdata</a></li>
           </ul>
         </nav>
       </div>
@@ -113,6 +145,24 @@ const jsonLd = JSON.stringify(buildHomeJsonLd());
       if (canvas) {
         new SpiderCabinetEngine(canvas, assets);
       }
+
+      const drop = document.querySelector('.nav-drop') as HTMLElement | null;
+      const trigger = drop?.querySelector('.nav-drop-trigger') as HTMLButtonElement | null;
+      const setDrop = (open: boolean) => {
+        if (!drop || !trigger) return;
+        drop.classList.toggle('open', open);
+        trigger.setAttribute('aria-expanded', String(open));
+      };
+      trigger?.addEventListener('click', (event) => {
+        event.stopPropagation();
+        setDrop(!drop?.classList.contains('open'));
+      });
+      document.addEventListener('click', (event) => {
+        if (drop && !drop.contains(event.target as Node)) setDrop(false);
+      });
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') setDrop(false);
+      });
     </script>
   </body>
 </html>
