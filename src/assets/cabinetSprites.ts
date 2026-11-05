@@ -704,399 +704,313 @@ function generateFlyCanvas(): HTMLCanvasElement {
 }
 
 // ============================================================================
-// 2. Clean, Minimalist, Studio-Polished 3D Sculpted Platform Letterforms
-//    - Shopee: Sculpted 3D Orange 'S' (with subtle 3D bag arch)
+// 2. Razor-Sharp Infinite-Resolution Vector SVG 3D Platform Sculptures
+//    - Shopee: Sculpted 3D Orange 'S' (with 3D bag arch)
 //    - Amazon: Sculpted 3D 'a' + 3D Golden-Orange Smile Arrow
 //    - TikTok: Sculpted 3D Chromatic 'd' Note Glyph
 //    - Etsy:   Sculpted 3D Terracotta-Orange Serif 'E'
 // ============================================================================
 
-function traceShopeeS(ctx: CanvasRenderingContext2D) {
-  ctx.beginPath();
-  ctx.moveTo(46, -46);
-  ctx.bezierCurveTo(32, -74, -46, -74, -46, -30);
-  ctx.bezierCurveTo(-46, 12, 50, -2, 50, 44);
-  ctx.bezierCurveTo(50, 84, -34, 84, -50, 50);
+function svgToDataUrl(svg: string): string {
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg.trim())}`;
 }
 
 function generateMugDataUrl(): string {
-  // 300 x 300 (rendered at 2x = 600 x 600):
-  // Pure, studio-polished 3D Orange 'S' for Shopee with generous margin so neither handle arch nor bottom 3D extrusion clips
-  const W = 300;
-  const H = 300;
-  const [c, ctx] = createCanvas(W * 2, H * 2);
-  ctx.scale(2, 2);
+  // Pure Vector 3D Shopee 'S' (300x300 viewBox) — infinitely sharp at any screen DPI
+  const sPath =
+    'M 46 -46 C 32 -74, -46 -74, -46 -30 C -46 12, 50 -2, 50 44 C 50 84, -34 84, -50 50';
+  const archPath = 'M -24.5 -61 A 25 25 0 0 1 24.5 -61';
 
-  ctx.save();
-  ctx.translate(142, 140);
-  ctx.scale(1.12, 1.12);
-  ctx.rotate(-0.05);
-
-  // 1. Minimalist 3D Shopee Handle Arch above the 'S' (extruded 3D orange loop)
-  ctx.save();
-  ctx.lineCap = 'round';
+  let extrudeArch = '';
   for (let d = 10; d >= 1; d--) {
-    ctx.strokeStyle = d > 5 ? '#9a200c' : '#c83212';
-    ctx.lineWidth = 13;
-    ctx.beginPath();
-    ctx.arc(d * 0.65, -66 + d * 0.85, 25, Math.PI * 1.06, -0.06 * Math.PI);
-    ctx.stroke();
+    const col = d > 5 ? '#9a200c' : '#c83212';
+    extrudeArch += `<path d="${archPath}" transform="translate(${(d * 0.65).toFixed(2)}, ${(d * 0.85).toFixed(2)})" fill="none" stroke="${col}" stroke-width="13" stroke-linecap="round" />`;
   }
-  const archGrad = ctx.createLinearGradient(-26, -94, 26, -64);
-  archGrad.addColorStop(0, '#ff8a4c');
-  archGrad.addColorStop(0.5, '#ff5d2e');
-  archGrad.addColorStop(1, '#ee4d2d');
-  ctx.strokeStyle = archGrad;
-  ctx.lineWidth = 13;
-  ctx.beginPath();
-  ctx.arc(0, -66, 25, Math.PI * 1.06, -0.06 * Math.PI);
-  ctx.stroke();
 
-  // Subtle top highlight on arch
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
-  ctx.lineWidth = 3.2;
-  ctx.beginPath();
-  ctx.arc(-1, -67.5, 25, Math.PI * 1.15, -0.22 * Math.PI);
-  ctx.stroke();
-  ctx.restore();
-
-  // 2. Deep 3D Extrusion Stack for the Giant Orange 'S' (26 smooth depth layers)
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  const depthSteps = 26;
+  let extrudeS = '';
+  const depthSteps = 22;
   for (let i = depthSteps; i >= 1; i--) {
     const t = i / depthSteps;
-    const ox = i * 0.72;
-    const oy = i * 0.92;
-    ctx.save();
-    ctx.translate(ox, oy);
-    // Smooth 3D side-wall shading from deep burnt crimson-orange to rich vermilion
-    const r = Math.round(148 + (1 - t) * 78);
-    const g = Math.round(28 + (1 - t) * 34);
-    const b = Math.round(12 + (1 - t) * 16);
-    ctx.strokeStyle = `rgb(${r}, ${g}, ${b})`;
-    ctx.lineWidth = 40;
-    traceShopeeS(ctx);
-    ctx.stroke();
-    ctx.restore();
+    const ox = (i * 0.72).toFixed(2);
+    const oy = (i * 0.92).toFixed(2);
+    const r = Math.round(145 + (1 - t) * 80);
+    const g = Math.round(26 + (1 - t) * 36);
+    const b = Math.round(10 + (1 - t) * 16);
+    extrudeS += `<path d="${sPath}" transform="translate(${ox}, ${oy})" fill="none" stroke="rgb(${r},${g},${b})" stroke-width="40" stroke-linecap="round" stroke-linejoin="round" />`;
   }
 
-  // 3. Front Bevel Rim of the 3D Orange 'S'
-  const bevelGrad = ctx.createLinearGradient(-60, -80, 60, 85);
-  bevelGrad.addColorStop(0, '#ffb074');
-  bevelGrad.addColorStop(0.35, '#ff6734');
-  bevelGrad.addColorStop(0.75, '#ee4d2d');
-  bevelGrad.addColorStop(1, '#c93315');
-  ctx.strokeStyle = bevelGrad;
-  ctx.lineWidth = 40;
-  traceShopeeS(ctx);
-  ctx.stroke();
-
-  // 4. Inner Sculpted Face of the 3D Orange 'S'
-  const faceGrad = ctx.createLinearGradient(-50, -75, 55, 80);
-  faceGrad.addColorStop(0, '#ff7b42');
-  faceGrad.addColorStop(0.45, '#f6532b');
-  faceGrad.addColorStop(1, '#dc3818');
-  ctx.strokeStyle = faceGrad;
-  ctx.lineWidth = 31;
-  traceShopeeS(ctx);
-  ctx.stroke();
-
-  // 5. Crisp Studio Specular Ridge Highlight along the top-left 3D bevel
-  ctx.save();
-  ctx.translate(-3.5, -3.5);
-  const specGrad = ctx.createLinearGradient(-50, -75, 45, 70);
-  specGrad.addColorStop(0, 'rgba(255, 255, 255, 0.78)');
-  specGrad.addColorStop(0.45, 'rgba(255, 232, 210, 0.38)');
-  specGrad.addColorStop(0.8, 'rgba(255, 180, 120, 0.15)');
-  specGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
-  ctx.strokeStyle = specGrad;
-  ctx.lineWidth = 8.5;
-  traceShopeeS(ctx);
-  ctx.stroke();
-  ctx.restore();
-
-  ctx.restore();
-  return c.toDataURL('image/png');
+  const svg = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="300" height="300" shape-rendering="geometricPrecision">
+  <defs>
+    <linearGradient id="shpArch" x1="-26" y1="-94" x2="26" y2="-64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ff9457" />
+      <stop offset="50%" stop-color="#ff5d2e" />
+      <stop offset="100%" stop-color="#ee4d2d" />
+    </linearGradient>
+    <linearGradient id="shpBevel" x1="-60" y1="-80" x2="60" y2="85" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffb880" />
+      <stop offset="35%" stop-color="#ff6734" />
+      <stop offset="75%" stop-color="#ee4d2d" />
+      <stop offset="100%" stop-color="#c93315" />
+    </linearGradient>
+    <linearGradient id="shpFace" x1="-50" y1="-75" x2="55" y2="80" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ff8048" />
+      <stop offset="45%" stop-color="#f6532b" />
+      <stop offset="100%" stop-color="#dc3818" />
+    </linearGradient>
+    <linearGradient id="shpSpec" x1="-50" y1="-75" x2="45" y2="70" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9" />
+      <stop offset="45%" stop-color="#ffe8d2" stop-opacity="0.48" />
+      <stop offset="85%" stop-color="#ffb478" stop-opacity="0.15" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+  <g transform="translate(142, 142) scale(1.12) rotate(-2.8)">
+    <!-- Soft ground shadow -->
+    <path d="${sPath}" transform="translate(19, 27)" fill="none" stroke="rgba(10, 24, 110, 0.16)" stroke-width="44" stroke-linecap="round" />
+    <!-- 3D Bag Handle Arch -->
+    ${extrudeArch}
+    <path d="${archPath}" fill="none" stroke="url(#shpArch)" stroke-width="13" stroke-linecap="round" />
+    <path d="M -21 -66 A 25 25 0 0 1 19 -67" fill="none" stroke="rgba(255,255,255,0.68)" stroke-width="3" stroke-linecap="round" />
+    <!-- 3D Extruded S Stack -->
+    ${extrudeS}
+    <!-- Front Bevel & Sculpted Face -->
+    <path d="${sPath}" fill="none" stroke="url(#shpBevel)" stroke-width="40" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="${sPath}" fill="none" stroke="url(#shpFace)" stroke-width="31" stroke-linecap="round" stroke-linejoin="round" />
+    <!-- Crisp Top-Left Specular Highlight -->
+    <path d="${sPath}" transform="translate(-3.5, -3.5)" fill="none" stroke="url(#shpSpec)" stroke-width="7.5" stroke-linecap="round" />
+  </g>
+</svg>`;
+  return svgToDataUrl(svg);
 }
 
 function generateIBookDataUrl(): string {
-  // 312 x 377 (rendered at 2x = 624 x 754):
-  // Pure, studio-polished 3D Amazon 'a' + 3D Golden-Orange Smile Arrow (clean floating 3D sculpture with safe margin)
-  const W = 312;
-  const H = 377;
-  const [c, ctx] = createCanvas(W * 2, H * 2);
-  ctx.scale(2, 2);
+  // Pure Vector 3D Amazon 'a' + Golden Smile Arrow (312x377 viewBox)
+  // Custom geometric vector path for the iconic bold lowercase 'a' (bowl + stem + terminal hook)
+  const aOuterPath = [
+    // Start top-left arch of 'a'
+    'M -52 -58',
+    'C -46 -88, -18 -102, 14 -102',
+    'C 48 -102, 68 -84, 68 -48',
+    'L 68 12',
+    'C 68 24, 71 32, 77 38',
+    'L 44 38',
+    'C 40 32, 38 25, 37 18',
+    'C 24 34, 4 42, -18 42',
+    'C -48 42, -68 24, -68 -1',
+    'C -68 -29, -44 -44, -2 -48',
+    'L 34 -52',
+    'L 34 -58',
+    'C 34 -72, 24 -80, 7 -80',
+    'C -10 -80, -21 -72, -25 -58',
+    'Z',
+    // Counter (inner hole of bowl)
+    'M 34 -31',
+    'L 4 -27',
+    'C -20 -24, -33 -15, -33 -2',
+    'C -33 11, -22 19, -6 19',
+    'C 16 19, 34 4, 34 -18',
+    'Z',
+  ].join(' ');
 
-  ctx.save();
-  ctx.translate(150, 184);
-  ctx.scale(1.12, 1.12);
-  ctx.rotate(0.035);
+  const smileCurve = 'M -86 58 Q 0 108 86 48';
+  const smileHead = 'M 56 40 L 94 44 L 76 78';
 
-  // 1. 3D Extruded Lowercase 'a' Monogram
-  ctx.save();
-  ctx.font = '900 215px "Inter", system-ui, -apple-system, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.lineJoin = 'round';
-
-  // 26-layer 3D depth extrusion in deep midnight-anthracite
-  const depthSteps = 26;
-  for (let i = depthSteps; i >= 1; i--) {
-    const t = i / depthSteps;
-    const ox = -6 + i * 0.72;
-    const oy = -26 + i * 0.92;
-    const lum = Math.round(12 + (1 - t) * 26);
-    ctx.fillStyle = `rgb(${lum}, ${lum + 6}, ${lum + 18})`;
-    ctx.fillText('a', ox, oy);
+  let extrudeA = '';
+  const depthA = 22;
+  for (let i = depthA; i >= 1; i--) {
+    const t = i / depthA;
+    const ox = (i * 0.72).toFixed(2);
+    const oy = (i * 0.92).toFixed(2);
+    const r = Math.round(10 + (1 - t) * 24);
+    const g = Math.round(16 + (1 - t) * 32);
+    const b = Math.round(30 + (1 - t) * 48);
+    extrudeA += `<path d="${aOuterPath}" fill-rule="evenodd" transform="translate(${ox}, ${oy})" fill="rgb(${r},${g},${b})" />`;
   }
 
-  // Outer 3D bevel stroke on front face
-  const aBevel = ctx.createLinearGradient(-75, -115, 75, 55);
-  aBevel.addColorStop(0, '#64748b');
-  aBevel.addColorStop(0.5, '#334155');
-  aBevel.addColorStop(1, '#0f172a');
-  ctx.lineWidth = 6;
-  ctx.strokeStyle = aBevel;
-  ctx.strokeText('a', -6, -26);
-
-  // Satin Charcoal-Slate 3D Front Face
-  const aFace = ctx.createLinearGradient(-70, -115, 65, 55);
-  aFace.addColorStop(0, '#3b4a63');
-  aFace.addColorStop(0.42, '#1e293b');
-  aFace.addColorStop(1, '#0f172a');
-  ctx.fillStyle = aFace;
-  ctx.fillText('a', -6, -26);
-
-  // Top-left studio rim highlight on 'a'
-  ctx.save();
-  ctx.clip();
-  ctx.restore();
-  ctx.lineWidth = 2.2;
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.38)';
-  ctx.strokeText('a', -8, -28);
-  ctx.restore();
-
-  // 2. 3D Extruded Iconic Amazon Golden-Orange Smile Arrow underneath
-  const traceSmileCurve = () => {
-    ctx.beginPath();
-    ctx.moveTo(-88, 56);
-    ctx.quadraticCurveTo(0, 108, 86, 48);
-  };
-
-  const traceSmileHead = () => {
-    ctx.beginPath();
-    ctx.moveTo(56, 40);
-    ctx.lineTo(94, 44);
-    ctx.lineTo(76, 78);
-  };
-
-  ctx.save();
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-
-  // 3D depth stack for the orange smile arrow
-  for (let i = 18; i >= 1; i--) {
-    const t = i / 18;
-    ctx.save();
-    ctx.translate(i * 0.65, i * 0.88);
-    ctx.strokeStyle = t > 0.5 ? '#9a3412' : '#c2410c';
-    ctx.lineWidth = 18;
-    traceSmileCurve();
-    ctx.stroke();
-    ctx.lineWidth = 15;
-    traceSmileHead();
-    ctx.stroke();
-    ctx.restore();
+  let extrudeSmile = '';
+  for (let i = 15; i >= 1; i--) {
+    const col = i > 7 ? '#9a3412' : '#c2410c';
+    const ox = (i * 0.65).toFixed(2);
+    const oy = (i * 0.88).toFixed(2);
+    extrudeSmile += `<g transform="translate(${ox}, ${oy})" fill="none" stroke="${col}" stroke-linecap="round" stroke-linejoin="round">
+      <path d="${smileCurve}" stroke-width="18" />
+      <path d="${smileHead}" stroke-width="15" />
+    </g>`;
   }
 
-  // Front face of the 3D Golden-Orange Smile Arrow
-  const smileGrad = ctx.createLinearGradient(-90, 45, 95, 85);
-  smileGrad.addColorStop(0, '#ffb830');
-  smileGrad.addColorStop(0.5, '#ff9900');
-  smileGrad.addColorStop(1, '#ea580c');
-  ctx.strokeStyle = smileGrad;
-  ctx.lineWidth = 18;
-  traceSmileCurve();
-  ctx.stroke();
-
-  ctx.lineWidth = 15;
-  traceSmileHead();
-  ctx.stroke();
-
-  // Glossy specular ridge on the smile arrow
-  ctx.save();
-  ctx.translate(-2, -2.5);
-  ctx.strokeStyle = 'rgba(255, 250, 220, 0.72)';
-  ctx.lineWidth = 4.5;
-  traceSmileCurve();
-  ctx.stroke();
-  ctx.restore();
-
-  ctx.restore();
-  ctx.restore();
-  return c.toDataURL('image/png');
+  const svg = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 312 377" width="312" height="377" shape-rendering="geometricPrecision">
+  <defs>
+    <linearGradient id="amzBevel" x1="-70" y1="-105" x2="75" y2="45" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#64748b" />
+      <stop offset="50%" stop-color="#334155" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+    <linearGradient id="amzFace" x1="-65" y1="-105" x2="65" y2="45" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3b4c66" />
+      <stop offset="45%" stop-color="#1e293b" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+    <linearGradient id="amzSmile" x1="-90" y1="45" x2="95" y2="85" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffc247" />
+      <stop offset="50%" stop-color="#ff9900" />
+      <stop offset="100%" stop-color="#ea580c" />
+    </linearGradient>
+  </defs>
+  <g transform="translate(150, 178) scale(1.12) rotate(2)">
+    <!-- Soft contact shadow -->
+    <path d="${aOuterPath}" fill-rule="evenodd" transform="translate(18, 25)" fill="rgba(10, 24, 110, 0.15)" />
+    <path d="${smileCurve}" transform="translate(14, 21)" fill="none" stroke="rgba(10, 24, 110, 0.15)" stroke-width="20" stroke-linecap="round" />
+    <!-- 3D Extruded 'a' -->
+    ${extrudeA}
+    <path d="${aOuterPath}" fill-rule="evenodd" fill="url(#amzFace)" stroke="url(#amzBevel)" stroke-width="4.5" stroke-linejoin="round" />
+    <path d="${aOuterPath}" fill-rule="evenodd" transform="translate(-1.8, -1.8)" fill="none" stroke="rgba(255,255,255,0.42)" stroke-width="2" stroke-linejoin="round" />
+    <!-- 3D Extruded Golden Smile Arrow -->
+    ${extrudeSmile}
+    <path d="${smileCurve}" fill="none" stroke="url(#amzSmile)" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="${smileHead}" fill="none" stroke="url(#amzSmile)" stroke-width="15" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="${smileCurve}" transform="translate(-2, -2.5)" fill="none" stroke="rgba(255, 250, 220, 0.78)" stroke-width="4.2" stroke-linecap="round" />
+  </g>
+</svg>`;
+  return svgToDataUrl(svg);
 }
 
 function generateBookDataUrl(): string {
-  // 293 x 322 (rendered at 2x = 586 x 644):
-  // Pure, studio-polished 3D TikTok Musical Note ('d' glyph) with 3D Cyan, Coral-Red & Obsidian extrusion
-  const W = 293;
-  const H = 322;
-  const [c, ctx] = createCanvas(W * 2, H * 2);
-  ctx.scale(2, 2);
+  // Pure Vector 3D TikTok Musical Note ('d' glyph) (293x322 viewBox)
+  // Exact single continuous vector stroke for the lower vinyl loop + vertical stem + upper wave flag
+  const notePath =
+    'M 13.8 46.9 A 36 36 0 1 1 -2.8 7.5 M 14 38 L 14 -74 Q 16 -28 66 -22';
 
-  ctx.save();
-  ctx.translate(142, 166);
-  ctx.scale(1.16, 1.16);
-  ctx.rotate(-0.045);
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-
-  const traceNote = () => {
-    ctx.beginPath();
-    // Lower vinyl loop of the 'd' note
-    ctx.arc(-22, 38, 36, 0.08 * Math.PI, Math.PI * 1.68);
-    // Vertical stem
-    ctx.moveTo(14, 38);
-    ctx.lineTo(14, -74);
-    // Upper wave flag
-    ctx.quadraticCurveTo(16, -28, 66, -22);
-  };
-
-  // Helper to draw a 3D extruded note layer
-  const draw3DNoteLayer = (
+  const buildNoteLayer = (
     ox: number,
     oy: number,
     sideDark: string,
     sideMid: string,
-    frontStart: string,
-    frontEnd: string,
+    gradId: string,
     specColor: string
   ) => {
-    ctx.save();
-    ctx.translate(ox, oy);
-    for (let i = 16; i >= 1; i--) {
-      ctx.save();
-      ctx.translate(i * 0.62, i * 0.82);
-      ctx.strokeStyle = i > 8 ? sideDark : sideMid;
-      ctx.lineWidth = 30;
-      traceNote();
-      ctx.stroke();
-      ctx.restore();
+    let extrude = '';
+    for (let i = 14; i >= 1; i--) {
+      const col = i > 7 ? sideDark : sideMid;
+      extrude += `<path d="${notePath}" transform="translate(${(i * 0.62).toFixed(2)}, ${(i * 0.82).toFixed(2)})" fill="none" stroke="${col}" stroke-width="30" stroke-linecap="round" stroke-linejoin="round" />`;
     }
-
-    const grad = ctx.createLinearGradient(-60, -80, 65, 80);
-    grad.addColorStop(0, frontStart);
-    grad.addColorStop(1, frontEnd);
-    ctx.strokeStyle = grad;
-    ctx.lineWidth = 30;
-    traceNote();
-    ctx.stroke();
-
-    ctx.save();
-    ctx.translate(-2.5, -2.5);
-    ctx.strokeStyle = specColor;
-    ctx.lineWidth = 6;
-    traceNote();
-    ctx.stroke();
-    ctx.restore();
-
-    ctx.restore();
+    return `
+      <g transform="translate(${ox}, ${oy})">
+        ${extrude}
+        <path d="${notePath}" fill="none" stroke="url(#${gradId})" stroke-width="30" stroke-linecap="round" stroke-linejoin="round" />
+        <path d="${notePath}" transform="translate(-2.5, -2.5)" fill="none" stroke="${specColor}" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" />
+      </g>`;
   };
 
-  // 1. Back-left 3D Cyan Layer (#25F4EE)
-  draw3DNoteLayer(
-    -11,
-    -9,
-    '#0e7490',
-    '#06b6d4',
-    '#67e8f9',
-    '#25f4ee',
-    'rgba(255, 255, 255, 0.7)'
-  );
-
-  // 2. Back-right 3D Coral-Red Layer (#FE2C55)
-  draw3DNoteLayer(
-    11,
-    9,
-    '#881337',
-    '#be123c',
-    '#ff5c7c',
-    '#fe2c55',
-    'rgba(255, 220, 230, 0.65)'
-  );
-
-  // 3. Center 3D Sculpted Obsidian-Slate Core Layer
-  draw3DNoteLayer(
-    0,
-    0,
-    '#020617',
-    '#0f172a',
-    '#334155',
-    '#0f172a',
-    'rgba(255, 255, 255, 0.55)'
-  );
-
-  ctx.restore();
-  return c.toDataURL('image/png');
+  const svg = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 293 322" width="293" height="322" shape-rendering="geometricPrecision">
+  <defs>
+    <linearGradient id="ttCyan" x1="-60" y1="-80" x2="65" y2="80" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#67e8f9" />
+      <stop offset="100%" stop-color="#25f4ee" />
+    </linearGradient>
+    <linearGradient id="ttRed" x1="-60" y1="-80" x2="65" y2="80" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ff6382" />
+      <stop offset="100%" stop-color="#fe2c55" />
+    </linearGradient>
+    <linearGradient id="ttCore" x1="-60" y1="-80" x2="65" y2="80" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3b4c66" />
+      <stop offset="50%" stop-color="#1e293b" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+  </defs>
+  <g transform="translate(142, 166) scale(1.15) rotate(-2.5)">
+    <path d="${notePath}" transform="translate(22, 26)" fill="none" stroke="rgba(10, 24, 110, 0.16)" stroke-width="34" stroke-linecap="round" stroke-linejoin="round" />
+    ${buildNoteLayer(-11, -9, '#0e7490', '#06b6d4', 'ttCyan', 'rgba(255,255,255,0.78)')}
+    ${buildNoteLayer(11, 9, '#881337', '#be123c', 'ttRed', 'rgba(255,225,235,0.72)')}
+    ${buildNoteLayer(0, 0, '#020617', '#0f172a', 'ttCore', 'rgba(255,255,255,0.62)')}
+  </g>
+</svg>`;
+  return svgToDataUrl(svg);
 }
 
 function generateTshirtDataUrl(): string {
-  // 280 x 260 (rendered at 2x = 560 x 520):
-  // Pure, studio-polished 3D Terracotta-Orange Serif 'E' for Etsy anchored at bottom edge with safe margin
-  const W = 280;
-  const H = 260;
-  const [c, ctx] = createCanvas(W * 2, H * 2);
-  ctx.scale(2, 2);
+  // Pure Vector 3D Sculpted Shopify Shopping Bag & 'S' Monogram Emblem (280x260 viewBox)
+  // Iconic Shopify Lime-Emerald Green (#95BF47 / #5E8E3E) 3D bag with folded gusset, 3D arch handle, and embossed 3D White 'S'
+  const bagFrontPath = 'M -52 -52 L 32 -60 L 48 68 L -64 62 Z';
+  const bagSideGussetPath = 'M 32 -60 L 58 -48 L 68 56 L 48 68 Z';
+  const bagTopLipPath = 'M -52 -52 L -32 -62 L 58 -48 L 32 -60 Z';
+  const handleBackPath = 'M -14 -58 C -14 -92, 26 -92, 26 -54';
+  const handleFrontPath = 'M -24 -55 C -24 -96, 18 -98, 20 -57';
+  const shopifySPath =
+    'M 10 -24 C 4 -34, -22 -34, -24 -16 C -26 2, 16 -2, 14 20 C 12 38, -16 38, -26 22';
 
-  ctx.save();
-  ctx.translate(132, 134);
-  ctx.scale(1.08, 1.08);
-  ctx.rotate(-0.025);
-
-  ctx.font = '900 188px Georgia, "Times New Roman", serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.lineJoin = 'round';
-
-  // 1. 28-Layer 3D Extrusion Stack in Warm Burnt Terracotta
-  const depthSteps = 28;
+  let extrudeBag = '';
+  const depthSteps = 18;
   for (let i = depthSteps; i >= 1; i--) {
     const t = i / depthSteps;
-    const ox = i * 0.75;
-    const oy = i * 0.92;
-    const r = Math.round(124 + (1 - t) * 76);
-    const g = Math.round(38 + (1 - t) * 32);
-    const b = Math.round(12 + (1 - t) * 12);
-    ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-    ctx.fillText('E', ox, oy);
+    const ox = (i * 0.68).toFixed(2);
+    const oy = (i * 0.85).toFixed(2);
+    const r = Math.round(36 + (1 - t) * 42);
+    const g = Math.round(72 + (1 - t) * 60);
+    const b = Math.round(22 + (1 - t) * 24);
+    extrudeBag += `<path d="${bagFrontPath}" transform="translate(${ox}, ${oy})" fill="rgb(${r},${g},${b})" stroke="rgb(${r},${g},${b})" stroke-width="6" stroke-linejoin="round" />`;
   }
 
-  // 2. Outer 3D Bevel Rim on the Serif 'E'
-  const bevelGrad = ctx.createLinearGradient(-65, -85, 65, 85);
-  bevelGrad.addColorStop(0, '#fdba74');
-  bevelGrad.addColorStop(0.4, '#fb923c');
-  bevelGrad.addColorStop(1, '#c2410c');
-  ctx.lineWidth = 6.5;
-  ctx.strokeStyle = bevelGrad;
-  ctx.strokeText('E', 0, 0);
+  const svg = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 260" width="280" height="260" shape-rendering="geometricPrecision">
+  <defs>
+    <linearGradient id="shpfyFront" x1="-60" y1="-60" x2="48" y2="68" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#b5e550" />
+      <stop offset="42%" stop-color="#95bf47" />
+      <stop offset="100%" stop-color="#659a32" />
+    </linearGradient>
+    <linearGradient id="shpfyGusset" x1="32" y1="-60" x2="68" y2="68" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6fa338" />
+      <stop offset="55%" stop-color="#5e8e3e" />
+      <stop offset="100%" stop-color="#3b5e22" />
+    </linearGradient>
+    <linearGradient id="shpfyBevel" x1="-60" y1="-62" x2="55" y2="68" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#d9f99d" />
+      <stop offset="45%" stop-color="#95bf47" />
+      <stop offset="100%" stop-color="#3f6212" />
+    </linearGradient>
+    <linearGradient id="shpfyHandle" x1="-24" y1="-96" x2="24" y2="-54" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="55%" stop-color="#e2e8f0" />
+      <stop offset="100%" stop-color="#94a3b8" />
+    </linearGradient>
+  </defs>
+  <g transform="translate(136, 128) scale(1.1) rotate(-1.8)">
+    <!-- Soft ground shadow -->
+    <path d="${bagFrontPath}" transform="translate(20, 26)" fill="rgba(10, 24, 110, 0.16)" stroke="rgba(10, 24, 110, 0.16)" stroke-width="10" stroke-linejoin="round" />
 
-  // 3. Sculpted Etsy Orange Front Face (#F1641E)
-  const faceGrad = ctx.createLinearGradient(-60, -85, 60, 85);
-  faceGrad.addColorStop(0, '#ff8547');
-  faceGrad.addColorStop(0.5, '#f1641e');
-  faceGrad.addColorStop(1, '#d9480f');
-  ctx.fillStyle = faceGrad;
-  ctx.fillText('E', 0, 0);
+    <!-- Back Bag Loop Handle -->
+    <path d="${handleBackPath}" transform="translate(4, 5)" fill="none" stroke="#3f6212" stroke-width="10" stroke-linecap="round" />
+    <path d="${handleBackPath}" fill="none" stroke="#659a32" stroke-width="9.5" stroke-linecap="round" />
 
-  // 4. Crisp Top-Left Specular Bevel Highlight
-  ctx.lineWidth = 2.4;
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.65)';
-  ctx.strokeText('E', -2, -2);
+    <!-- 3D Extruded Bag Stack -->
+    ${extrudeBag}
 
-  ctx.restore();
-  return c.toDataURL('image/png');
+    <!-- Right 3D Folded Bag Gusset Panel -->
+    <path d="${bagSideGussetPath}" fill="url(#shpfyGusset)" stroke="#3b5e22" stroke-width="4" stroke-linejoin="round" />
+    <path d="${bagTopLipPath}" fill="#4d7c2b" stroke="#3b5e22" stroke-width="3" stroke-linejoin="round" />
+
+    <!-- Main Front Shopify Green Bag Face -->
+    <path d="${bagFrontPath}" fill="url(#shpfyFront)" stroke="url(#shpfyBevel)" stroke-width="5" stroke-linejoin="round" />
+
+    <!-- Front 3D Arch Handle -->
+    <path d="${handleFrontPath}" transform="translate(3, 4)" fill="none" stroke="rgba(45, 78, 18, 0.55)" stroke-width="10.5" stroke-linecap="round" />
+    <path d="${handleFrontPath}" fill="none" stroke="url(#shpfyHandle)" stroke-width="9.5" stroke-linecap="round" />
+    <path d="M -20 -64 C -18 -90, 12 -91, 16 -64" fill="none" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" />
+
+    <!-- 3D Embossed White Shopify 'S' Monogram on Bag Face -->
+    <path d="${shopifySPath}" transform="translate(3.5, 4.5)" fill="none" stroke="rgba(42, 72, 16, 0.55)" stroke-width="19" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="${shopifySPath}" fill="none" stroke="#ffffff" stroke-width="18" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="${shopifySPath}" transform="translate(-1.5, -1.5)" fill="none" stroke="#ecfccb" stroke-width="4" stroke-linecap="round" />
+
+    <!-- Crisp Top-Left Specular Rim on Bag -->
+    <path d="M -50 -50 L 30 -58" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="2.8" stroke-linecap="round" />
+    <path d="M -50 -50 L -62 59" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="2.4" stroke-linecap="round" />
+  </g>
+</svg>`;
+  return svgToDataUrl(svg);
 }
 
 function generatePlayerArtUrl(): string {

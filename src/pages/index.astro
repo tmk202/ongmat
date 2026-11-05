@@ -1,0 +1,118 @@
+---
+/**
+ * Astro 7 Static Entry Page (`src/pages/index.astro`)
+ * - Pure CSS (`src/styles/global.css`) — No Tailwind
+ * - Zero framework JS overhead: mounts vanilla `SpiderCabinetEngine` directly on `<canvas>`
+ * - Static semantic HTML + Schema.org `DataCatalog` JSON-LD for https://ecommarketdata.com
+ */
+import '../styles/global.css';
+import shopeePod from '../data/shopee-tiktok-gmv-pod.json';
+import amazonTerminal from '../data/amazon-shopify-buybox-terminal.json';
+import tiktokVault from '../data/tiktok-shop-live-telemetry.json';
+import etsyHub from '../data/etsy-lazada-omni-hub.json';
+import { buildHomeJsonLd, DEFAULT_DESCRIPTION, DEFAULT_TITLE, SITE_ORIGIN } from '../seo/seoHead';
+
+const datasets = [shopeePod, amazonTerminal, tiktokVault, etsyHub];
+const jsonLd = JSON.stringify(buildHomeJsonLd());
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>{DEFAULT_TITLE}</title>
+    <meta name="description" content={DEFAULT_DESCRIPTION} />
+    <link rel="canonical" href={`${SITE_ORIGIN}/`} />
+    <link rel="sitemap" type="application/xml" href="/sitemap-index.xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={`${SITE_ORIGIN}/`} />
+    <meta property="og:site_name" content="ecommarketdata" />
+    <meta property="og:title" content={DEFAULT_TITLE} />
+    <meta property="og:description" content={DEFAULT_DESCRIPTION} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={DEFAULT_TITLE} />
+    <meta name="twitter:description" content={DEFAULT_DESCRIPTION} />
+    <script type="application/ld+json" set:html={jsonLd} />
+  </head>
+  <body>
+    <main class="page">
+      <div class="frame">
+        <header class="top-nav">
+          <a href="/" class="logo-box">
+            <img id="astro-logo-back" alt="" width="53" height="41" class="logo-folder-back" />
+            <img id="astro-logo-front" alt="" width="53" height="34" class="logo-folder-front" />
+            <span class="logo-word" data-web-anchor>ecommarketdata</span>
+          </a>
+          <nav class="nav-links" aria-label="Primary Navigation">
+            <a href="/" class="nav-link active" data-web-anchor>home</a>
+            <a href="/data/shopee-tiktok-gmv-pod" class="nav-link" data-web-anchor>shopee</a>
+            <a href="/data/amazon-shopify-buybox-terminal" class="nav-link" data-web-anchor>amazon</a>
+            <a href="/data/tiktok-shop-live-telemetry" class="nav-link" data-web-anchor>tiktok shop</a>
+            <a href="/data/etsy-lazada-omni-hub" class="nav-link" data-web-anchor>etsy</a>
+          </nav>
+        </header>
+
+        <h1 class="found" data-web-anchor>
+          <span>ec</span><span class="letter-o">o</span><span>m</span>
+          <span class="found-sub-tag">marketdata</span>
+        </h1>
+
+        <a href={`/data/${shopeePod.slug}`} aria-label={shopeePod.title}>
+          <img id="astro-obj-mug" alt={shopeePod.title} width="300" height="300" class="cabinet-obj obj-mug" data-web-anchor />
+        </a>
+        <a href={`/data/${amazonTerminal.slug}`} aria-label={amazonTerminal.title}>
+          <img id="astro-obj-ibook" alt={amazonTerminal.title} width="312" height="377" class="cabinet-obj obj-ibook" data-web-anchor />
+        </a>
+        <a href={`/data/${tiktokVault.slug}`} aria-label={tiktokVault.title}>
+          <img id="astro-obj-book" alt={tiktokVault.title} width="293" height="322" class="cabinet-obj obj-book" data-web-anchor />
+        </a>
+        <a href={`/data/${etsyHub.slug}`} aria-label={etsyHub.title}>
+          <img id="astro-obj-tshirt" alt={etsyHub.title} width="280" height="260" class="cabinet-obj obj-tshirt" data-web-anchor data-stick="bottom" />
+        </a>
+
+        <h2 class="cabinet" data-web-anchor>the curiosity<br />cabinet</h2>
+        <p class="tagline" data-web-anchor>Deep e-commerce market intelligence for modern enterprises.</p>
+
+        <nav class="seo-catalog-nav" aria-label="E-Commerce Datasets Directory">
+          <ul>
+            {datasets.map((d) => (
+              <li><a href={`/data/${d.slug}`}>{d.title} — {d.seoDescription}</a></li>
+            ))}
+          </ul>
+        </nav>
+      </div>
+
+      <canvas id="astro-web-canvas" class="web-layer"></canvas>
+
+      <div class="over" aria-hidden="true">
+        <div class="found">
+          <span>ec</span><span class="letter-o">o</span><span>m</span>
+          <span class="found-sub-tag">marketdata</span>
+        </div>
+      </div>
+    </main>
+
+    <script>
+      import { getCabinetAssets } from '../assets/cabinetSprites';
+      import { SpiderCabinetEngine } from '../engine/spiderEngine';
+
+      const assets = getCabinetAssets();
+      const bindImg = (id: string, src: string) => {
+        const el = document.getElementById(id) as HTMLImageElement | null;
+        if (el) el.src = src;
+      };
+      bindImg('astro-logo-back', assets.logoBackUrl);
+      bindImg('astro-logo-front', assets.logoFrontUrl);
+      bindImg('astro-obj-mug', assets.mugUrl);
+      bindImg('astro-obj-ibook', assets.ibookUrl);
+      bindImg('astro-obj-book', assets.bookUrl);
+      bindImg('astro-obj-tshirt', assets.tshirtUrl);
+
+      const canvas = document.getElementById('astro-web-canvas') as HTMLCanvasElement | null;
+      if (canvas) {
+        new SpiderCabinetEngine(canvas, assets);
+      }
+    </script>
+  </body>
+</html>

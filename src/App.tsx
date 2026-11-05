@@ -3,15 +3,21 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { getCabinetAssets } from './assets/cabinetSprites';
 import {
+  ALL_PLATFORM_DATASETS,
   CURIOSITY_ARTIFACTS,
   CuriosityArtifact,
+  getArtifactBySlug,
+  getSectionByItemSlug,
   NAV_SECTIONS,
   NavSectionContent,
 } from './data/ecomCabinetData';
 import { SpiderCabinetEngine } from './engine/spiderEngine';
+import { syncSeoHead } from './seo/seoHead';
+
+type NavKey = 'home' | 'archive' | 'oddities' | 'experiments' | 'drawer' | 'about' | 'contact';
 
 export default function App() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -19,10 +25,8 @@ export default function App() {
 
   const assets = useMemo(() => getCabinetAssets(), []);
 
-  // Interactive Ecommarketdata Cabinet Modals / Drawers
-  const [activeNav, setActiveNav] = useState<
-    'home' | 'archive' | 'oddities' | 'experiments' | 'drawer' | 'about' | 'contact'
-  >('home');
+  // Route & Drawer State synced with `/data/[slug]` and SEO Head
+  const [activeNav, setActiveNav] = useState<NavKey>('home');
   const [selectedArtifact, setSelectedArtifact] = useState<CuriosityArtifact | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -32,14 +36,106 @@ export default function App() {
   const [leadSubmitted, setLeadSubmitted] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
-  const showToast = (msg: string) => {
+  const showToast = useCallback((msg: string) => {
     setToastMsg(msg);
     window.setTimeout(() => {
       setToastMsg((prev) => (prev === msg ? null : prev));
     }, 3200);
-  };
+  }, []);
 
-  // Initialize Spider & Silk Canvas Engine
+  // Parse URL path (`/data/[slug]` or `/?q=...`) on initial load & browser back/forward
+  const applyPathnameState = useCallback((pathname: string, search: string) => {
+    const params = new URLSearchParams(search);
+    const qParam = params.get('q');
+    if (qParam) {
+      setSearchQuery(qParam);
+      setSearchOpen(true);
+    }
+
+    const cleanPath = pathname.replace(/\/+$/, '') || '/';
+    if (cleanPath.startsWith('/data/')) {
+      const slug = cleanPath.slice('/data/'.length);
+      const matchedArtifact = getArtifactBySlug(slug);
+      if (matchedArtifact) {
+        setActiveNav('home');
+        setSelectedArtifact(matchedArtifact);
+        return;
+      }
+      const matchedSection = getSectionByItemSlug(slug);
+      if (matchedSection) {
+        setSelectedArtifact(null);
+        setActiveNav(matchedSection.section.id);
+        return;
+      }
+    }
+
+    const sectionKey = cleanPath.slice(1) as NavKey;
+    if (
+      sectionKey &&
+      sectionKey !== 'home' &&
+      Object.prototype.hasOwnProperty.call(NAV_SECTIONS, sectionKey)
+    ) {
+      setSelectedArtifact(null);
+      setActiveNav(sectionKey);
+      return;
+    }
+
+    setSelectedArtifact(null);
+    setActiveNav('home');
+  }, []);
+
+  useEffect(() => {
+    applyPathnameState(window.location.pathname, window.location.search);
+    const onPopState = () => {
+      applyPathnameState(window.location.pathname, window.location.search);
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [applyPathnameState]);
+
+  // Navigate to `/data/[slug]` or `/` and update browser URL + SEO canonical/JSON-LD
+  const navigateToDatasetSlug = useCallback((artifact: CuriosityArtifact) => {
+    setSearchOpen(false);
+    setMenuOpen(false);
+    setActiveNav('home');
+    setSelectedArtifact(artifact);
+    const targetPath = `/data/${artifact.slug}`;
+    if (window.location.pathname !== targetPath) {
+      window.history.pushState({ slug: artifact.slug }, '', targetPath);
+    }
+  }, []);
+
+  const navigateToSection = useCallback((nav: NavKey, customSlug?: string) => {
+    setSearchOpen(false);
+    setMenuOpen(false);
+    setSelectedArtifact(null);
+    setActiveNav(nav);
+    const targetPath = customSlug ? `/data/${customSlug}` : nav === 'home' ? '/' : `/${nav}`;
+    if (window.location.pathname !== targetPath) {
+      window.history.pushState({ nav, slug: customSlug }, '', targetPath);
+    }
+  }, []);
+
+  const closeDossierToHome = useCallback(() => {
+    setSelectedArtifact(null);
+    setActiveNav('home');
+    if (window.location.pathname !== '/') {
+      window.history.pushState({}, '', '/');
+    }
+  }, []);
+
+  const currentNavContent: NavSectionContent | null =
+    activeNav !== 'home' ? NAV_SECTIONS[activeNav] : null;
+
+  // Sync <title>, <link rel="canonical">, OpenGraph, Twitter Card, and Schema.org JSON-LD
+  useEffect(() => {
+    syncSeoHead({
+      artifact: selectedArtifact,
+      section: currentNavContent,
+    });
+  }, [selectedArtifact, currentNavContent]);
+
+  // Initialize Cyber-Bee & Honey Droplets Canvas Engine
   useEffect(() => {
     if (!canvasRef.current) return;
     const engine = new SpiderCabinetEngine(canvasRef.current, assets);
@@ -79,38 +175,35 @@ export default function App() {
     showToast('Enterprise sandbox API credentials dispatched to your inbox.');
   };
 
-  const currentNavContent: NavSectionContent | null =
-    activeNav !== 'home' ? NAV_SECTIONS[activeNav] : null;
-
-  // Filtered search items across all sections and artifacts
+  // Filtered search items across all `/data/[slug]` JSON datasets and sections
   const searchResults = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
-    const allItems: { code: string; title: string; subtitle: string; onSelect: () => void }[] = [];
+    const allItems: {
+      code: string;
+      href: string;
+      title: string;
+      subtitle: string;
+      onSelect: () => void;
+    }[] = [];
 
-    Object.values(CURIOSITY_ARTIFACTS).forEach((art) => {
+    ALL_PLATFORM_DATASETS.forEach((art) => {
       allItems.push({
-        code: art.catalogCode,
+        code: `${art.catalogCode} · /data/${art.slug}`,
+        href: `/data/${art.slug}`,
         title: art.title,
         subtitle: `${art.category} · ${art.subtitle}`,
-        onSelect: () => {
-          setSearchOpen(false);
-          setActiveNav('home');
-          setSelectedArtifact(art);
-        },
+        onSelect: () => navigateToDatasetSlug(art),
       });
     });
 
     Object.values(NAV_SECTIONS).forEach((sec) => {
       sec.items.forEach((it) => {
         allItems.push({
-          code: it.code,
+          code: `${it.code} · /data/${it.slug}`,
+          href: `/data/${it.slug}`,
           title: it.name,
           subtitle: `${it.category} · ${it.metric}`,
-          onSelect: () => {
-            setSearchOpen(false);
-            setSelectedArtifact(null);
-            setActiveNav(sec.id);
-          },
+          onSelect: () => navigateToSection(sec.id, it.slug),
         });
       });
     });
@@ -122,21 +215,20 @@ export default function App() {
         item.subtitle.toLowerCase().includes(q) ||
         item.code.toLowerCase().includes(q)
     );
-  }, [searchQuery]);
+  }, [searchQuery, navigateToDatasetSlug, navigateToSection]);
 
   return (
-    <div className="page">
+    <main className="page">
       {/* LAYER 1: .frame (All base content and web anchors) */}
       <div className="frame">
         {/* Top Navigation */}
         <header className="top-nav">
           <a
-            href="#home"
+            href="/"
             className="logo-box"
             onClick={(e) => {
               e.preventDefault();
-              setActiveNav('home');
-              setSelectedArtifact(null);
+              closeDossierToHome();
               setSearchOpen(false);
               setMenuOpen(false);
             }}
@@ -144,14 +236,18 @@ export default function App() {
             <img
               src={assets.logoBackUrl}
               alt=""
+              width={53}
+              height={41}
+              decoding="async"
               className="logo-folder-back"
-              referrerPolicy="no-referrer"
             />
             <img
               src={assets.logoFrontUrl}
               alt=""
+              width={53}
+              height={34}
+              decoding="async"
               className="logo-folder-front"
-              referrerPolicy="no-referrer"
             />
             <span className="logo-word" data-web-anchor>
               ecommarketdata
@@ -161,30 +257,28 @@ export default function App() {
           <nav className="nav-links" aria-label="Primary Navigation">
             {(
               [
-                ['home', 'home'],
-                ['archive', 'archive'],
-                ['oddities', 'oddities'],
-                ['experiments', 'experiments'],
-                ['drawer', 'the drawer'],
-                ['about', 'about'],
-                ['contact', 'contact'],
+                ['home', 'home', '/'],
+                ['archive', 'archive', '/archive'],
+                ['oddities', 'oddities', '/oddities'],
+                ['experiments', 'experiments', '/experiments'],
+                ['drawer', 'the drawer', '/drawer'],
+                ['about', 'about', '/about'],
+                ['contact', 'contact', '/contact'],
               ] as const
-            ).map(([key, label]) => (
-              <button
+            ).map(([key, label, href]) => (
+              <a
                 key={key}
-                type="button"
+                href={href}
                 data-web-anchor
                 className={`nav-link ${activeNav === key && !selectedArtifact ? 'active' : ''}`}
                 onClick={(e) => {
+                  e.preventDefault();
                   e.stopPropagation();
-                  setSelectedArtifact(null);
-                  setSearchOpen(false);
-                  setMenuOpen(false);
-                  setActiveNav(key);
+                  navigateToSection(key);
                 }}
               >
                 {label}
-              </button>
+              </a>
             ))}
           </nav>
 
@@ -192,7 +286,8 @@ export default function App() {
             <button
               type="button"
               className="nav-icon-btn"
-              title="Search 14.2B E-Commerce SKUs & Datasets"
+              title="Search 14.2B E-Commerce SKUs & /data/[slug] Datasets"
+              aria-label="Search market datasets"
               onClick={(e) => {
                 e.stopPropagation();
                 setMenuOpen(false);
@@ -202,14 +297,17 @@ export default function App() {
               <img
                 src={assets.searchUrl}
                 alt="Search market archive"
+                width={26}
+                height={26}
+                decoding="async"
                 data-web-anchor
-                referrerPolicy="no-referrer"
               />
             </button>
             <button
               type="button"
               className="nav-icon-btn"
-              title="Cabinet Controls & Spider Telemetry"
+              title="Cabinet Controls & Cyber-Bee Telemetry"
+              aria-label="Open cabinet controls"
               onClick={(e) => {
                 e.stopPropagation();
                 setSearchOpen(false);
@@ -219,8 +317,10 @@ export default function App() {
               <img
                 src={assets.menuUrl}
                 alt="Open cabinet menu"
+                width={26}
+                height={26}
+                decoding="async"
                 data-web-anchor
-                referrerPolicy="no-referrer"
               />
             </button>
           </div>
@@ -234,57 +334,65 @@ export default function App() {
           <span className="found-sub-tag">marketdata</span>
         </h1>
 
-        {/* Clean 3D Sculpted Platform Letterforms (Shopee 'S', Amazon 'a', TikTok Glyph, Etsy 'E') */}
+        {/* 3D Sculpted Platform Letterforms linked to `/data/[slug]` */}
         <img
           src={assets.mugUrl}
-          alt="Shopee 3D Orange S Emblem"
+          alt="Shopee 3D Orange S Emblem — /data/shopee-tiktok-gmv-pod"
+          width={300}
+          height={300}
+          loading="eager"
+          decoding="async"
           className="cabinet-obj obj-mug"
           data-web-anchor
-          referrerPolicy="no-referrer"
           onClick={(e) => {
             e.stopPropagation();
-            setActiveNav('home');
-            setSelectedArtifact(CURIOSITY_ARTIFACTS.mug);
+            navigateToDatasetSlug(CURIOSITY_ARTIFACTS.mug);
           }}
         />
 
         <img
           src={assets.ibookUrl}
-          alt="Amazon 3D A and Smile Arrow Emblem"
+          alt="Amazon 3D A and Smile Arrow Emblem — /data/amazon-shopify-buybox-terminal"
+          width={312}
+          height={377}
+          loading="eager"
+          decoding="async"
           className="cabinet-obj obj-ibook"
           data-web-anchor
-          referrerPolicy="no-referrer"
           onClick={(e) => {
             e.stopPropagation();
-            setActiveNav('home');
-            setSelectedArtifact(CURIOSITY_ARTIFACTS.ibook);
+            navigateToDatasetSlug(CURIOSITY_ARTIFACTS.ibook);
           }}
         />
 
         <img
           src={assets.bookUrl}
-          alt="TikTok Shop 3D Emblem"
+          alt="TikTok Shop 3D Emblem — /data/tiktok-shop-live-telemetry"
+          width={293}
+          height={322}
+          loading="eager"
+          decoding="async"
           className="cabinet-obj obj-book"
           data-web-anchor
-          referrerPolicy="no-referrer"
           onClick={(e) => {
             e.stopPropagation();
-            setActiveNav('home');
-            setSelectedArtifact(CURIOSITY_ARTIFACTS.book);
+            navigateToDatasetSlug(CURIOSITY_ARTIFACTS.book);
           }}
         />
 
         <img
           src={assets.tshirtUrl}
-          alt="Etsy 3D Orange E Emblem"
+          alt="Shopify 3D Green Bag S Emblem — /data/etsy-lazada-omni-hub"
+          width={280}
+          height={260}
+          loading="eager"
+          decoding="async"
           className="cabinet-obj obj-tshirt"
           data-web-anchor
           data-stick="bottom"
-          referrerPolicy="no-referrer"
           onClick={(e) => {
             e.stopPropagation();
-            setActiveNav('home');
-            setSelectedArtifact(CURIOSITY_ARTIFACTS.tshirt);
+            navigateToDatasetSlug(CURIOSITY_ARTIFACTS.tshirt);
           }}
         />
 
@@ -298,12 +406,31 @@ export default function App() {
         <p className="tagline" data-web-anchor>
           Deep e-commerce market intelligence for modern enterprises.
         </p>
+
+        {/* Crawlable Semantic `/data/[slug]` Links for Search Engine Bots & Screen Readers */}
+        <nav className="seo-catalog-nav" aria-label="E-Commerce Datasets Directory">
+          <ul>
+            {ALL_PLATFORM_DATASETS.map((art) => (
+              <li key={art.slug}>
+                <a
+                  href={`/data/${art.slug}`}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigateToDatasetSlug(art);
+                  }}
+                >
+                  {art.title} — {art.seoDescription}
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
       </div>
 
-      {/* LAYER 2: .web-layer (Single full-size 2D canvas for spider, silk web, shadows, drops & fly) */}
+      {/* LAYER 2: .web-layer (Single full-size 2D canvas for Cyber-Bee & honey droplets) */}
       <canvas ref={canvasRef} className="web-layer" />
 
-      {/* LAYER 3: .over (Second copy of the giant wordmark with only the letter "o" visible so spider crawls UNDER "o") */}
+      {/* LAYER 3: .over (Second copy of the giant wordmark with only the letter "o" visible) */}
       <div className="over" aria-hidden="true">
         <div className="found">
           <span>ec</span>
@@ -316,95 +443,98 @@ export default function App() {
       {/* Bottom-right Cyber-Bee Instructions Hint */}
       <div id="spider-instructions">
         <span className="hint-desktop">
-          Del / Backspace — clear data web · Click — Cyber-Bee pounces Deal · Click objects — inspect market data
+          Click platforms — open /data/[slug] · Cyber-Bee autonomously harvests platform data
         </span>
         <span className="hint-touch">
-          Hold — clear data web
-          <br />
-          Double-tap — make the Cyber-Bee jump
+          Tap platforms — open /data/[slug]
         </span>
       </div>
 
-      {/* Interactive Search Modal (data-no-spider) */}
+      {/* Interactive Search Modal (Pure CSS) */}
       {searchOpen && (
         <div
           data-no-spider
-          className="fixed inset-0 z-30 flex items-start justify-center pt-20 px-4 bg-[#09157a]/25 backdrop-blur-sm"
+          className="modal-backdrop"
           onClick={() => setSearchOpen(false)}
         >
           <div
-            className="w-full max-w-xl rounded-2xl bg-[#1129e2] border border-white/25 shadow-2xl p-5 text-white"
+            className="search-dialog"
+            role="dialog"
+            aria-label="Search ecommarketdata datasets"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between gap-3 pb-3 border-b border-white/15">
+            <div className="search-header">
               <input
-                type="text"
+                type="search"
                 autoFocus
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Query 14.2B SKUs, Shopee / TikTok Shop benchmarks, or objects..."
-                className="w-full bg-transparent text-white placeholder-white/55 text-base focus:outline-none"
+                placeholder="Query 14.2B SKUs, /data/[slug] datasets, Shopee / TikTok Shop..."
+                className="search-input"
               />
               <button
                 type="button"
                 onClick={() => setSearchOpen(false)}
-                className="text-xs text-white/70 hover:text-white px-2 py-1 rounded border border-white/20 whitespace-nowrap"
+                className="esc-btn"
               >
                 ESC
               </button>
             </div>
 
-            <div className="mt-3 space-y-2 max-h-80 overflow-y-auto pr-1">
+            <div className="search-list">
               {searchResults.map((res) => (
-                <button
+                <a
                   key={res.code + res.title}
-                  type="button"
-                  onClick={res.onSelect}
-                  className="w-full text-left p-3 rounded-xl bg-white/10 hover:bg-white/18 transition-colors flex items-center justify-between gap-4"
+                  href={res.href}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    res.onSelect();
+                  }}
+                  className="search-item"
                 >
                   <div>
-                    <div className="text-xs font-mono text-amber-300">{res.code}</div>
-                    <div className="text-sm font-semibold text-white">{res.title}</div>
-                    <div className="text-xs text-white/75">{res.subtitle}</div>
+                    <div className="search-item-code">{res.code}</div>
+                    <div className="search-item-title">{res.title}</div>
+                    <div className="search-item-sub">{res.subtitle}</div>
                   </div>
-                  <span className="text-xs text-white/70 whitespace-nowrap">Inspect →</span>
-                </button>
+                  <span className="search-item-cta">Open →</span>
+                </a>
               ))}
             </div>
           </div>
         </div>
       )}
 
-      {/* Quick Cabinet & Cyber-Bee Controls Popover (data-no-spider) */}
+      {/* Quick Cabinet & Cyber-Bee Controls Popover (Pure CSS) */}
       {menuOpen && (
         <div
           data-no-spider
-          className="fixed top-20 right-6 z-30 w-80 rounded-2xl bg-[#1129e2] border border-white/25 backdrop-blur-md shadow-2xl p-5 text-white"
+          className="menu-popover"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex items-center justify-between pb-3 border-b border-white/15">
+          <div className="menu-header">
             <div>
-              <div className="text-sm font-semibold">ecommarketdata Cabinet</div>
-              <div className="text-xs text-white/75">Cyber-Bee Harvester & Hive Volatility</div>
+              <div className="menu-title">ecommarketdata.com</div>
+              <div className="menu-subtitle">Astro 7 Static SEO · Cloudflare Workers</div>
             </div>
             <button
               type="button"
               onClick={() => setMenuOpen(false)}
-              className="text-xs text-white/70 hover:text-white px-2 py-1"
+              className="menu-close"
+              aria-label="Close menu"
             >
               ✕
             </button>
           </div>
 
-          <div className="mt-3 space-y-2.5">
-
+          <div className="menu-actions">
             <button
               type="button"
               onClick={() => {
                 engineRef.current?.triggerSpiderJump();
                 setMenuOpen(false);
               }}
-              className="w-full py-2 px-3 rounded-xl bg-white text-[#1129e2] font-semibold text-xs hover:bg-white/90 transition-colors text-left flex items-center justify-between"
+              className="btn-primary-white"
             >
               <span>Make Cyber-Bee Pounce Deal</span>
               <span>Click / Jump</span>
@@ -415,11 +545,11 @@ export default function App() {
               onClick={() => {
                 engineRef.current?.triggerClearWeb();
                 setMenuOpen(false);
-                showToast('Cleared data-silk web from cabinet.');
+                showToast('Cleared honey droplets from cabinet.');
               }}
-              className="w-full py-2 px-3 rounded-xl bg-white/12 hover:bg-white/20 text-white font-medium text-xs transition-colors text-left flex items-center justify-between"
+              className="btn-ghost-white"
             >
-              <span>Clear Data-Silk Network</span>
+              <span>Clear Honey Droplets</span>
               <span>Del / Backspace</span>
             </button>
 
@@ -429,32 +559,28 @@ export default function App() {
                 setMenuOpen(false);
                 handleDownloadSampleCsv('ecommarketdata_Q4_benchmark_sample.csv');
               }}
-              className="w-full py-2 px-3 rounded-xl bg-white/12 hover:bg-white/20 text-white font-medium text-xs transition-colors text-left flex items-center justify-between"
+              className="btn-ghost-white"
             >
               <span>Download Sample E-Com CSV</span>
               <span>4.2 KB</span>
             </button>
 
-            <div className="pt-2 border-t border-white/15 grid grid-cols-2 gap-1.5">
+            <div className="menu-grid">
               {(
                 [
                   ['archive', 'Archive'],
                   ['oddities', 'Oddities'],
                   ['experiments', 'Experiments'],
                   ['drawer', 'The Drawer'],
-                  ['about', 'About Tech'],
+                  ['about', 'Tech Stack'],
                   ['contact', 'API Access'],
                 ] as const
               ).map(([k, label]) => (
                 <button
                   key={k}
                   type="button"
-                  onClick={() => {
-                    setMenuOpen(false);
-                    setSelectedArtifact(null);
-                    setActiveNav(k);
-                  }}
-                  className="py-1.5 px-2.5 rounded-lg bg-white/8 hover:bg-white/15 text-xs text-left text-white/90"
+                  onClick={() => navigateToSection(k)}
+                  className="menu-grid-btn"
                 >
                   {label}
                 </button>
@@ -464,78 +590,74 @@ export default function App() {
         </div>
       )}
 
-      {/* Collectible Object Dossier Drawer (Opens when clicking Mug, iBook, Almanac Book, or T-Shirt) */}
+      {/* `/data/[slug]` Dataset Dossier Drawer (Opens when clicking Shopee, Amazon, TikTok, or Etsy) */}
       {selectedArtifact && (
-        <div
+        <article
           data-no-spider
-          className="fixed inset-y-0 right-0 z-30 w-full max-w-lg bg-[#0a1888]/92 backdrop-blur-xl border-l border-white/25 shadow-2xl p-6 text-white overflow-y-auto flex flex-col justify-between"
+          className="dossier-drawer"
+          itemScope
+          itemType="https://schema.org/Dataset"
           onClick={(e) => e.stopPropagation()}
         >
           <div>
-            <div className="flex items-center justify-between gap-4 pb-4 border-b border-white/15">
-              <div className="text-xs font-mono tracking-wider text-sky-300">
-                {selectedArtifact.catalogCode}
+            <div className="dossier-top">
+              <div>
+                <div className="dossier-kicker">{selectedArtifact.catalogCode}</div>
+                <span className="dossier-route-badge">
+                  /data/{selectedArtifact.slug} · src/data/{selectedArtifact.slug}.json
+                </span>
               </div>
               <button
                 type="button"
-                onClick={() => setSelectedArtifact(null)}
-                className="px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-medium"
+                onClick={closeDossierToHome}
+                className="dossier-close-btn"
               >
                 Close Dossier
               </button>
             </div>
 
-            <h3 className="mt-4 text-2xl font-semibold tracking-tight leading-snug">
+            <h3 className="dossier-title" itemProp="name">
               {selectedArtifact.title}
             </h3>
-            <p className="mt-1 text-sm text-white/75">{selectedArtifact.subtitle}</p>
+            <p className="dossier-subtitle">{selectedArtifact.subtitle}</p>
 
-            <p className="mt-4 text-sm leading-relaxed text-white/90 bg-white/8 rounded-xl p-4 border border-white/15">
+            <p className="dossier-summary" itemProp="description">
               {selectedArtifact.summary}
             </p>
 
             {/* Key Quantitative Metrics */}
-            <div className="mt-5 grid grid-cols-3 gap-3">
+            <div className="metric-grid">
               {selectedArtifact.metrics.map((m) => (
-                <div
-                  key={m.label}
-                  className="rounded-xl bg-white/10 border border-white/15 p-3 flex flex-col justify-between"
-                >
-                  <div className="text-[11px] text-white/70">{m.label}</div>
-                  <div className="mt-1 text-xl font-semibold tabular-nums text-white">
-                    {m.value}
-                  </div>
-                  <div className="mt-0.5 text-[11px] text-sky-300">{m.delta}</div>
+                <div key={m.label} className="metric-card">
+                  <div className="metric-label">{m.label}</div>
+                  <div className="metric-value">{m.value}</div>
+                  <div className="metric-delta">{m.delta}</div>
                 </div>
               ))}
             </div>
 
             {/* Platform / Category Benchmark Table */}
-            <div className="mt-6">
-              <div className="text-xs font-semibold uppercase tracking-wider text-white/70 mb-2">
-                Verified Marketplace Telemetry (Tabular)
-              </div>
-              <div className="rounded-xl border border-white/20 overflow-hidden bg-white/5">
-                <table className="w-full text-left border-collapse text-xs tabular-nums">
+            <div className="table-section">
+              <div className="table-heading">Verified Marketplace Telemetry (Tabular)</div>
+              <div className="table-wrap">
+                <table className="benchmark-table">
                   <thead>
-                    <tr className="border-b border-white/15 text-white/70 bg-white/8">
-                      <th className="py-2.5 px-3 font-medium">Segment / Platform</th>
-                      <th className="py-2.5 px-2 font-medium">Share</th>
-                      <th className="py-2.5 px-2 font-medium">YoY</th>
-                      <th className="py-2.5 px-2 font-medium">AOV</th>
-                      <th className="py-2.5 px-3 font-medium text-right">CVR</th>
+                    <tr>
+                      <th>Segment / Platform</th>
+                      <th>Share</th>
+                      <th>YoY</th>
+                      <th>AOV</th>
+                      <th>CVR</th>
                     </tr>
                   </thead>
                   <tbody>
                     {selectedArtifact.benchmarks.map((row) => (
-                      <tr key={row.platform} className="border-b border-white/10 last:border-none">
-                        <td className="py-2.5 px-3 font-medium text-white">{row.platform}</td>
-                        <td className="py-2.5 px-2 text-white/85">{row.share}</td>
-                        <td className="py-2.5 px-2 text-emerald-300 font-medium">
-                          {row.yoyGrowth}
-                        </td>
-                        <td className="py-2.5 px-2 text-white/85">{row.avgBasket}</td>
-                        <td className="py-2.5 px-3 text-right text-sky-200">{row.conversionRate}</td>
+                      <tr key={row.platform}>
+                        <td className="cell-platform">{row.platform}</td>
+                        <td>{row.share}</td>
+                        <td className="cell-growth">{row.yoyGrowth}</td>
+                        <td>{row.avgBasket}</td>
+                        <td className="cell-cvr">{row.conversionRate}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -543,83 +665,71 @@ export default function App() {
               </div>
             </div>
 
-            <div className="mt-5 rounded-xl bg-sky-400/15 border border-sky-300/30 p-3.5 text-xs leading-relaxed text-sky-100">
-              <strong className="font-semibold text-white">Analyst Takeaway: </strong>
+            <div className="analyst-note">
+              <strong>Analyst Takeaway: </strong>
               {selectedArtifact.insightNote}
             </div>
           </div>
 
-          <div className="mt-6 pt-4 border-t border-white/15 flex items-center justify-between gap-3">
+          <div className="dossier-footer">
             <button
               type="button"
-              onClick={() =>
-                handleDownloadSampleCsv(`ecommarketdata_${selectedArtifact.id}_telemetry.csv`)
-              }
-              className="px-4 py-2.5 rounded-xl bg-white text-[#1129e2] font-semibold text-xs hover:bg-white/90 transition-colors whitespace-nowrap"
+              onClick={() => handleDownloadSampleCsv(selectedArtifact.sampleCsvFilename)}
+              className="btn-export"
             >
               Export Raw CSV
             </button>
             <button
               type="button"
-              onClick={() => {
-                setSelectedArtifact(null);
-                setActiveNav('contact');
-              }}
-              className="px-4 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white font-medium text-xs transition-colors whitespace-nowrap"
+              onClick={() => navigateToSection('contact')}
+              className="btn-secondary-action"
             >
               Request Full Category API →
             </button>
           </div>
-        </div>
+        </article>
       )}
 
       {/* Navigation Section Drawer (Archive, Oddities, Experiments, The Drawer, About, Contact) */}
       {currentNavContent && !selectedArtifact && (
-        <div
+        <section
           data-no-spider
-          className="fixed inset-y-0 right-0 z-30 w-full max-w-xl bg-[#0a1888]/92 backdrop-blur-xl border-l border-white/25 shadow-2xl p-6 text-white overflow-y-auto"
+          className="dossier-drawer wide"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex items-center justify-between gap-4 pb-4 border-b border-white/15">
-            <div className="text-xs font-mono tracking-wider text-sky-300">
-              {currentNavContent.kicker}
-            </div>
+          <div className="dossier-top">
+            <div className="dossier-kicker">{currentNavContent.kicker}</div>
             <button
               type="button"
-              onClick={() => setActiveNav('home')}
-              className="px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-medium"
+              onClick={closeDossierToHome}
+              className="dossier-close-btn"
             >
               Back to Cabinet
             </button>
           </div>
 
-          <h3 className="mt-4 text-2xl font-semibold tracking-tight">{currentNavContent.title}</h3>
-          <p className="mt-2 text-sm text-white/80 leading-relaxed">
-            {currentNavContent.description}
-          </p>
+          <h3 className="dossier-title">{currentNavContent.title}</h3>
+          <p className="dossier-subtitle">{currentNavContent.description}</p>
 
-          <div className="mt-5 space-y-3">
+          <div className="section-list">
             {currentNavContent.items.map((item) => (
-              <div
-                key={item.code}
-                className="rounded-xl bg-white/10 border border-white/15 p-4 hover:bg-white/14 transition-colors"
-              >
-                <div className="flex items-center justify-between gap-2 text-xs text-sky-300 font-mono">
-                  <span>{item.code}</span>
+              <div key={item.code} className="section-card">
+                <div className="section-card-meta">
+                  <span>
+                    {item.code} · /data/{item.slug}
+                  </span>
                   <span>{item.category}</span>
                 </div>
-                <div className="mt-1 flex items-baseline justify-between gap-3">
-                  <h4 className="text-base font-semibold text-white">{item.name}</h4>
-                  <span className="text-xs font-semibold tabular-nums text-emerald-300 whitespace-nowrap">
-                    {item.metric}
-                  </span>
+                <div className="section-card-head">
+                  <h4 className="section-card-title">{item.name}</h4>
+                  <span className="section-card-metric">{item.metric}</span>
                 </div>
-                <p className="mt-1.5 text-xs text-white/80 leading-relaxed">{item.detail}</p>
+                <p className="section-card-detail">{item.detail}</p>
                 {activeNav === 'drawer' && (
                   <button
                     type="button"
                     onClick={() => handleDownloadSampleCsv(item.name)}
-                    className="mt-3 px-3 py-1.5 rounded-lg bg-white text-[#1129e2] font-semibold text-xs hover:bg-white/90 transition-colors"
+                    className="section-card-btn"
                   >
                     Download Sample File
                   </button>
@@ -629,63 +739,53 @@ export default function App() {
           </div>
 
           {activeNav === 'contact' && (
-            <form
-              onSubmit={handleLeadSubmit}
-              className="mt-6 rounded-2xl bg-white/10 border border-white/20 p-5 space-y-3"
-            >
-              <div className="text-sm font-semibold">Request Enterprise Sandbox & API Key</div>
+            <form onSubmit={handleLeadSubmit} className="lead-form">
+              <div className="lead-form-title">Request Enterprise Sandbox & API Key</div>
               {leadSubmitted ? (
-                <div className="p-3 rounded-xl bg-emerald-500/20 border border-emerald-300/40 text-xs text-emerald-100">
+                <div className="lead-success">
                   Thank you! Your 14-day ecommarketdata API sandbox key and Snowflake/BigQuery
                   schema docs have been sent to <strong>{leadEmail}</strong>.
                 </div>
               ) : (
                 <>
                   <div>
-                    <label className="block text-xs text-white/75 mb-1">Work Email</label>
+                    <label className="form-label">Work Email</label>
                     <input
                       type="email"
                       required
                       value={leadEmail}
                       onChange={(e) => setLeadEmail(e.target.value)}
                       placeholder="analyst@enterprise.com"
-                      className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/25 text-sm text-white placeholder-white/45 focus:outline-none focus:border-white"
+                      className="form-input"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-white/75 mb-1">
-                      Company & Target Marketplaces
-                    </label>
+                    <label className="form-label">Company & Target Marketplaces</label>
                     <input
                       type="text"
                       value={leadCompany}
                       onChange={(e) => setLeadCompany(e.target.value)}
                       placeholder="e.g. Acme Consumer · Shopee, TikTok Shop, Amazon"
-                      className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/25 text-sm text-white placeholder-white/45 focus:outline-none focus:border-white"
+                      className="form-input"
                     />
                   </div>
-                  <button
-                    type="submit"
-                    className="w-full py-2.5 px-4 rounded-xl bg-white text-[#1129e2] font-semibold text-xs hover:bg-white/90 transition-colors"
-                  >
-                    Provision Sandbox Credentials
+                  <button type="submit" className="btn-primary-white">
+                    <span>Provision Sandbox Credentials</span>
+                    <span>→</span>
                   </button>
                 </>
               )}
             </form>
           )}
-        </div>
+        </section>
       )}
 
       {/* Subtle Toast Notification */}
       {toastMsg && (
-        <div
-          data-no-spider
-          className="fixed bottom-10 left-1/2 -translate-x-1/2 z-40 px-4 py-2 rounded-xl bg-white text-[#1129e2] font-medium text-xs shadow-xl"
-        >
+        <div data-no-spider className="toast-banner">
           {toastMsg}
         </div>
       )}
-    </div>
+    </main>
   );
 }

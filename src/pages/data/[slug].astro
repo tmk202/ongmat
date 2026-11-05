@@ -1,0 +1,107 @@
+---
+/**
+ * Astro 7 Dynamic Static Dataset Route (`src/pages/data/[slug].astro`)
+ * - Reads JSON datasets from `src/data/*.json` and pre-renders `/data/[slug]` at build time (`0 JS` needed for SEO content)
+ * - Injects Canonical URL, OpenGraph, Twitter Cards, and Schema.org `Dataset` + `BreadcrumbList` JSON-LD
+ */
+import '../../styles/global.css';
+import { ALL_PLATFORM_DATASETS, CuriosityArtifact } from '../../data/ecomCabinetData';
+import { buildDatasetJsonLd, SITE_ORIGIN } from '../../seo/seoHead';
+
+export function getStaticPaths() {
+  return ALL_PLATFORM_DATASETS.map((dataset) => ({
+    params: { slug: dataset.slug },
+    props: { dataset },
+  }));
+}
+
+interface Props {
+  dataset: CuriosityArtifact;
+}
+
+const { dataset } = Astro.props;
+const canonicalUrl = `${SITE_ORIGIN}/data/${dataset.slug}`;
+const jsonLd = JSON.stringify(buildDatasetJsonLd(dataset));
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>{dataset.seoTitle}</title>
+    <meta name="description" content={dataset.seoDescription} />
+    <link rel="canonical" href={canonicalUrl} />
+    <link rel="sitemap" type="application/xml" href="/sitemap-index.xml" />
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:site_name" content="ecommarketdata" />
+    <meta property="og:title" content={dataset.seoTitle} />
+    <meta property="og:description" content={dataset.seoDescription} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={dataset.seoTitle} />
+    <meta name="twitter:description" content={dataset.seoDescription} />
+    <script type="application/ld+json" set:html={jsonLd} />
+  </head>
+  <body>
+    <main class="page">
+      <article class="dossier-drawer" itemscope itemtype="https://schema.org/Dataset">
+        <div>
+          <div class="dossier-top">
+            <div>
+              <div class="dossier-kicker">{dataset.catalogCode}</div>
+              <span class="dossier-route-badge">/data/{dataset.slug}</span>
+            </div>
+            <a href="/" class="dossier-close-btn">← Back to Cabinet</a>
+          </div>
+
+          <h1 class="dossier-title" itemprop="name">{dataset.title}</h1>
+          <p class="dossier-subtitle">{dataset.subtitle}</p>
+          <p class="dossier-summary" itemprop="description">{dataset.summary}</p>
+
+          <div class="metric-grid">
+            {dataset.metrics.map((m) => (
+              <div class="metric-card">
+                <div class="metric-label">{m.label}</div>
+                <div class="metric-value">{m.value}</div>
+                <div class="metric-delta">{m.delta}</div>
+              </div>
+            ))}
+          </div>
+
+          <div class="table-section">
+            <div class="table-heading">Verified Marketplace Telemetry (Tabular)</div>
+            <div class="table-wrap">
+              <table class="benchmark-table">
+                <thead>
+                  <tr>
+                    <th>Segment / Platform</th>
+                    <th>Share</th>
+                    <th>YoY</th>
+                    <th>AOV</th>
+                    <th>CVR</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {dataset.benchmarks.map((row) => (
+                    <tr>
+                      <td class="cell-platform">{row.platform}</td>
+                      <td>{row.share}</td>
+                      <td class="cell-growth">{row.yoyGrowth}</td>
+                      <td>{row.avgBasket}</td>
+                      <td class="cell-cvr">{row.conversionRate}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="analyst-note">
+            <strong>Analyst Takeaway: </strong>{dataset.insightNote}
+          </div>
+        </div>
+      </article>
+    </main>
+  </body>
+</html>

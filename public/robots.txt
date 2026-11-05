@@ -1,0 +1,9 @@
+# ecommarketdata.com — Astro 7 + @astrojs/sitemap + Cloudflare Workers
+User-agent: *
+Allow: /
+Allow: /data/
+
+# Host & Sitemap Index
+Host: https://ecommarketdata.com
+Sitemap: https://ecommarketdata.com/sitemap-index.xml
+Sitemap: https://ecommarketdata.com/sitemap-0.xml

@@ -1,0 +1,29 @@
+{
+  "id": "ibook",
+  "slug": "amazon-shopify-buybox-terminal",
+  "platformName": "Amazon",
+  "title": "Amazon × Shopify 14.2B SKU Buy-Box Terminal",
+  "subtitle": "Armored Clamshell Analyzer in Sapphire Borosilicate Enclosure",
+  "catalogCode": "OBJ-02 · AMAZON + SHOPIFY TERMINAL",
+  "category": "Automated Competitor Price, Buy-Box & Stock Tracking",
+  "seoTitle": "Amazon 14.2B SKU Buy-Box & Shopify D2C Dataset | ecommarketdata",
+  "seoDescription": "Hourly Amazon FBA Buy-Box win precision, competitor stock-out latency, and Shopify Plus D2C checkout velocity across 14.2 billion indexed listings.",
+  "keywords": ["Amazon Buy-Box dataset", "Shopify D2C benchmarks", "competitor price tracking", "FBA inventory telemetry", "ecommarketdata"],
+  "lastModified": "2026-11-05",
+  "temporalCoverage": "2021-01-01/2026-11-05",
+  "rowCount": "14,200,000,000",
+  "sampleCsvFilename": "ecommarketdata_amazon_shopify_buybox_terminal.csv",
+  "summary": "Encased in a precision CNC-bolted sapphire glass sleeve, this armored terminal continuously ingests hourly Amazon Buy-Box shifts, Shopify D2C checkout velocity, and warehouse stock depletion across 14.2 billion listings.",
+  "metrics": [
+    { "label": "Indexed Active SKUs", "value": "14.2B", "delta": "Refreshed every 15 mins" },
+    { "label": "Buy-Box Win Precision", "value": "99.4%", "delta": "Verified against merchant ERP" },
+    { "label": "Out-of-Stock Detection", "value": "< 8 min", "delta": "Real-time SKU alert latency" }
+  ],
+  "benchmarks": [
+    { "platform": "Amazon FBA Global", "share": "38.5%", "yoyGrowth": "+19.8%", "avgBasket": "$54.50", "conversionRate": "6.4%" },
+    { "platform": "Shopify Plus D2C", "share": "24.1%", "yoyGrowth": "+31.7%", "avgBasket": "$82.00", "conversionRate": "3.9%" },
+    { "platform": "Shopee Official Mall", "share": "21.8%", "yoyGrowth": "+28.4%", "avgBasket": "$27.20", "conversionRate": "5.7%" },
+    { "platform": "TikTok Shop Mall", "share": "15.6%", "yoyGrowth": "+64.3%", "avgBasket": "$22.60", "conversionRate": "5.2%" }
+  ],
+  "insightNote": "Dynamic repricing within 12 minutes of an Amazon or Shopify competitor stock-out yields an average +19.4% net margin expansion without sacrificing Buy-Box rank."
+}

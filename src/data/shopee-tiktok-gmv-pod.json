@@ -1,0 +1,29 @@
+{
+  "id": "mug",
+  "slug": "shopee-tiktok-gmv-pod",
+  "platformName": "Shopee",
+  "title": "Shopee × TikTok Shop Dual-Core GMV Harvester Pod",
+  "subtitle": "11.11 / 12.12 Live-Stream Checkout & Flash-Sale Reactor",
+  "catalogCode": "OBJ-01 · SHOPEE + TIKTOK SHOP POD",
+  "category": "Hourly Checkout Surge & Live-Cart Conversion",
+  "seoTitle": "Shopee & TikTok Shop GMV Dataset (11.11 / 12.12 Telemetry) | ecommarketdata",
+  "seoDescription": "Minute-by-minute Shopee Mall and TikTok Shop GMV surge telemetry, flash-sale voucher redemption lift, and top 1% hero SKU concentration benchmarks.",
+  "keywords": ["Shopee GMV data", "TikTok Shop analytics", "SEA e-commerce dataset", "11.11 flash sale telemetry", "ecommarketdata"],
+  "lastModified": "2026-11-05",
+  "temporalCoverage": "2021-01-01/2026-11-05",
+  "rowCount": "42,800,000",
+  "sampleCsvFilename": "ecommarketdata_shopee_tiktok_gmv_pod.csv",
+  "summary": "CNC-machined dual-core collector pod housing custom Shopee & TikTok Shop telemetry sensors. Captures how top 1% hero SKUs (\"Main Characters\") command 64.8% of category GMV within the first 90 minutes of campaign launch.",
+  "metrics": [
+    { "label": "Peak Checkout Surge", "value": "+340.4%", "delta": "First 45 mins of 11.11" },
+    { "label": "Hero SKU Concentration", "value": "64.8%", "delta": "Top 20 SKUs per category" },
+    { "label": "Voucher Redemption Lift", "value": "2.84x", "delta": "Stacked platform + shop codes" }
+  ],
+  "benchmarks": [
+    { "platform": "Shopee Mall SEA", "share": "46.2%", "yoyGrowth": "+24.5%", "avgBasket": "$26.80", "conversionRate": "5.6%" },
+    { "platform": "TikTok Shop Live", "share": "31.4%", "yoyGrowth": "+68.2%", "avgBasket": "$18.40", "conversionRate": "4.9%" },
+    { "platform": "Lazada LazMall", "share": "14.8%", "yoyGrowth": "+11.2%", "avgBasket": "$34.10", "conversionRate": "3.8%" },
+    { "platform": "Amazon Global D2C", "share": "7.6%", "yoyGrowth": "+19.4%", "avgBasket": "$58.90", "conversionRate": "6.4%" }
+  ],
+  "insightNote": "Brands that pre-warm TikTok Shop & Shopee live-stream carts 4 hours before midnight cut paid CAC by 38% while doubling organic algorithm weight."
+}

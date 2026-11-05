@@ -1,0 +1,194 @@
+{
+  "archive": {
+    "id": "archive",
+    "title": "The E-Commerce Market Archive",
+    "kicker": "14.2 BILLION SKUS · 2021–2026 HISTORICAL LEDGER",
+    "description": "Explore our longitudinal datasets across Southeast Asia, North America, and Europe. Every price change, bundle promotion, and verified buyer review is preserved.",
+    "items": [
+      {
+        "code": "ARC-01",
+        "slug": "sea-mega-campaign-ledger",
+        "name": "SEA Mega-Campaign Ledger (9.9 to 12.12)",
+        "category": "Shopee · TikTok Shop · Lazada",
+        "metric": "$48.6B GMV Tracked",
+        "detail": "Minute-by-minute price discounting, voucher exhaustion curves, and top 10,000 brand rankings across 6 SEA markets."
+      },
+      {
+        "code": "ARC-02",
+        "slug": "global-d2c-beauty-ingredient-index",
+        "name": "Global D2C Beauty & Skincare Ingredient Index",
+        "category": "Product Formulation & Pricing",
+        "metric": "1.8M Active Listings",
+        "detail": "Correlates active ingredient claims (Niacinamide, Retinol, Peptides, Centella) with repeat velocity and review sentiment."
+      },
+      {
+        "code": "ARC-03",
+        "slug": "shenzhen-cross-border-electronics-flow",
+        "name": "Cross-Border Shenzhen-to-Global Electronics Flow",
+        "category": "Supply Chain & Margin Telemetry",
+        "metric": "640K Factory Stores",
+        "detail": "Tracks FOB price spreads versus retail marketplace sell-through across audio, smart home, and mobile accessories."
+      },
+      {
+        "code": "ARC-04",
+        "slug": "verified-buyer-review-nlp-corpus",
+        "name": "Verified Buyer Review NLP Sentiment Corpus",
+        "category": "Defect & Packaging Intelligence",
+        "metric": "920M Reviews Parsed",
+        "detail": "Extracts product defect complaints, sizing friction, and packaging damage signals from 1-star to 5-star buyer photos."
+      }
+    ]
+  },
+  "oddities": {
+    "id": "oddities",
+    "title": "Market Oddities & Anomalies",
+    "kicker": "OUTLIER SKUS · VIRAL SPIKES · ALGORITHMIC CURIOSITIES",
+    "description": "Strange, counter-intuitive e-commerce phenomena discovered by our anomaly detection spiders crawling midnight marketplace feeds.",
+    "items": [
+      {
+        "code": "ODD-01",
+        "slug": "insomniac-high-ticket-cart-spike",
+        "name": "The 03:00 AM Insomniac High-Ticket Cart Spike",
+        "category": "Behavioral Economics",
+        "metric": "+62% Higher AOV",
+        "detail": "Orders placed between 02:30 and 04:00 AM show a 62% higher average order value in luxury home fragrance and mechanical keyboards."
+      },
+      {
+        "code": "ODD-02",
+        "slug": "decoy-bundle-anchoring-effect",
+        "name": "The Decoy Bundle Anchoring Effect",
+        "category": "Pricing Psychology",
+        "metric": "3.4x Twin-Pack Shift",
+        "detail": "Adding an overpriced 5-pack SKU with zero inventory causes 2-pack conversion rates to jump from 1.9% to 6.5%."
+      },
+      {
+        "code": "ODD-03",
+        "slug": "lofi-video-roas-outperformance",
+        "name": "Ugly-Thumbnail Lo-Fi Video Outperformance",
+        "category": "Creative Telemetry",
+        "metric": "+118% ROAS Lift",
+        "detail": "Raw warehouse packing clips filmed on handheld phones outperform studio-lit 4K commercials across 19 of 24 Gen-Z categories."
+      }
+    ]
+  },
+  "experiments": {
+    "id": "experiments",
+    "title": "Data Lab & Predictive Experiments",
+    "kicker": "ELASTICITY SIMULATIONS · AI DEMAND FORECASTING",
+    "description": "Live algorithmic models testing price sensitivity, thumbnail eye-tracking, and creator-to-SKU affinity graphs.",
+    "items": [
+      {
+        "code": "EXP-01",
+        "slug": "dynamic-coupon-decay-model",
+        "name": "Sub-Hour Dynamic Coupon Decay Model",
+        "category": "Reinforcement Pricing",
+        "metric": "+14.8% Net Contribution",
+        "detail": "Automatically tapers voucher subsidy as organic livestream viewer concurrency crosses 2,500 simultaneous shoppers."
+      },
+      {
+        "code": "EXP-02",
+        "slug": "hero-image-contrast-ctr-predictor",
+        "name": "Visual Hero-Image Contrast & CTR Predictor",
+        "category": "Computer Vision",
+        "metric": "0.89 R² Correlation",
+        "detail": "Predicts search-grid click-through rate before launch by scoring badge placement, saturation contrast, and negative space."
+      },
+      {
+        "code": "EXP-03",
+        "slug": "tiktok-sound-to-sku-velocity-graph",
+        "name": "Early-Signal Viral TikTok Sound-to-SKU Graph",
+        "category": "Social Velocity",
+        "metric": "72-Hr Lead Time",
+        "detail": "Detects rising audio trends and maps them to associated shoppable video anchors 3 days before marketplace search volume peaks."
+      }
+    ]
+  },
+  "drawer": {
+    "id": "drawer",
+    "title": "The Analyst Drawer (Downloadable Samples)",
+    "kicker": "RAW CSV SCHEMAS · BENCHMARK SNAPSHOTS",
+    "description": "Inspect and export clean sample rows from the ecommarketdata enterprise warehouse. Ready for Python, Excel, BigQuery, or Looker.",
+    "items": [
+      {
+        "code": "CSV-2026-Q4",
+        "slug": "sea-marketplace-category-share-2026",
+        "name": "SEA_Marketplace_Category_Share_2026.csv",
+        "category": "Quarterly Market Share",
+        "metric": "24,500 Rows · Clean Tabular",
+        "detail": "Includes GMV, Units Sold, Average Selling Price, Discount Depth %, and Official Store Share across 180 sub-categories."
+      },
+      {
+        "code": "CSV-SKU-VEL",
+        "slug": "top-5000-viral-livestream-skus",
+        "name": "Top_5000_Viral_Livestream_SKUs.csv",
+        "category": "Social Commerce Velocity",
+        "metric": "5,000 Rows · Hourly Series",
+        "detail": "Tracks creator commission rate, live room conversion rate, and 30-day post-campaign organic rank retention."
+      },
+      {
+        "code": "JSON-MAP-AUDIT",
+        "slug": "grey-market-reseller-price-violations",
+        "name": "Grey_Market_Reseller_Price_Violations.json",
+        "category": "Brand Governance",
+        "metric": "Real-Time Webhook Schema",
+        "detail": "Identifies unauthorized cross-border sellers undercutting official MAP pricing by more than 15%."
+      }
+    ]
+  },
+  "about": {
+    "id": "about",
+    "title": "About ecommarketdata",
+    "kicker": "ASTRO 7 STATIC-FIRST · CLOUDFLARE WORKERS EDGE · ZERO-JS SEO",
+    "description": "We build high-precision e-commerce market intelligence pipelines served from the Cloudflare Workers edge at ecommarketdata.com with instant static HTML delivery.",
+    "items": [
+      {
+        "code": "01. CRAWL",
+        "slug": "distributed-cyber-bee-harvester",
+        "name": "High-Frequency Distributed Harvester Network",
+        "category": "Infrastructure",
+        "metric": "4.2M Pages / Min",
+        "detail": "Just like the Cyber-Bee harvester in our cabinet, our distributed collectors traverse every Shopee, Amazon, TikTok Shop, and Etsy node."
+      },
+      {
+        "code": "02. NORMALIZE",
+        "slug": "cross-platform-sku-entity-resolution",
+        "name": "Cross-Platform SKU Entity Resolution",
+        "category": "Machine Learning",
+        "metric": "99.1% Match Precision",
+        "detail": "Unifies identical products sold under different titles and bundles across Shopee, TikTok Shop, Lazada, Amazon, and Etsy."
+      },
+      {
+        "code": "03. DELIVER",
+        "slug": "cloudflare-edge-static-data-delivery",
+        "name": "Astro 7 Static `/data/[slug]` + Warehouse Firehose",
+        "category": "Cloudflare Workers + Zero-ETL",
+        "metric": "15-Minute Freshness",
+        "detail": "Pre-rendered static `/data/[slug]` dataset pages with Schema.org JSON-LD plus direct Snowflake and BigQuery table sharing."
+      }
+    ]
+  },
+  "contact": {
+    "id": "contact",
+    "title": "Connect With Our Data Analysts",
+    "kicker": "REQUEST API ACCESS · CUSTOM CATEGORY AUDIT",
+    "description": "Book a 20-minute live terminal walkthrough or request a custom e-commerce market dataset for your target category.",
+    "items": [
+      {
+        "code": "API TRIAL",
+        "slug": "enterprise-sandbox-api-key",
+        "name": "14-Day Enterprise Sandbox Key",
+        "category": "Developer & BI Teams",
+        "metric": "Full REST + SQL Access",
+        "detail": "Query 3 full categories of your choice with historical daily GMV, unit sales, and price elasticity curves."
+      },
+      {
+        "code": "BESPOKE AUDIT",
+        "slug": "custom-category-competitor-audit",
+        "name": "Custom Category & Competitor Deep-Dive",
+        "category": "Strategy & Brand Leadership",
+        "metric": "Delivered in 48 Hours",
+        "detail": "Receive a board-ready market share deck + raw SKU ledger covering your top 25 marketplace competitors."
+      }
+    ]
+  }
+}

@@ -103,6 +103,24 @@ interface WobbleItem {
   vy: number;
 }
 
+interface PollenMote {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  startX: number;
+  startY: number;
+  targetX: number;
+  targetY: number;
+  size: number;
+  rot: number;
+  vRot: number;
+  born: number;
+  maxLife: number;
+  accentColor: string;
+  mode: 'siphon' | 'trail' | 'deposit';
+}
+
 export class SpiderCabinetEngine {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
@@ -217,6 +235,7 @@ export class SpiderCabinetEngine {
   private usedAnchors: Vec2[] = [];
   private fallingDrops: FallingDrop[] = [];
   private splats: Splat[] = [];
+  private pollenMotes: PollenMote[] = [];
   private clearingWeb = false;
   private clearAlpha = 1;
 
@@ -225,6 +244,11 @@ export class SpiderCabinetEngine {
     initialized: false,
     phase: 'TO_PLATFORM' as 'TO_PLATFORM' | 'HARVESTING' | 'TO_HIVE' | 'DEPOSITING',
     carryingHoney: false,
+    cargoFill: 0, // 0..1 smooth honey sac + hind-leg pollen basket + hex nectar pod fill
+    harvestTotalDur: 0.85,
+    depositTotalDur: 0.75,
+    platformAccent: 'rgba(251, 146, 60, 0.9)',
+    pollenSpawnCooldown: 0,
     lastPlatformIdx: -1,
     targetPlatformIdx: 0,
     p0: { x: 720, y: 400 },
@@ -612,105 +636,86 @@ export class SpiderCabinetEngine {
   }
 
   private buildDewSprite() {
-    // 96x96 Photorealistic 3D Refractive Liquid Honey Droplet Sprite (Zero cartoon outlines)
+    // 96x96 Luminous Sunlit Golden Honey Dome Sprite (Zero muddy/brown tones — pure glowing gold & white gloss)
     const c = document.createElement('canvas');
     c.width = 96;
     c.height = 96;
     const ctx = c.getContext('2d')!;
 
     ctx.save();
-    const cx = 46;
-    const cy = 46;
+    const cx = 48;
+    const cy = 48;
     const r = 30;
 
-    // 1. Soft Warm Amber-Gold Contact & Caustic Shadow underneath (offset down-right)
-    const shadowGrad = ctx.createRadialGradient(cx + 5, cy + 7, r * 0.15, cx + 5, cy + 7, r * 1.38);
-    shadowGrad.addColorStop(0, 'rgba(180, 83, 9, 0.34)');
-    shadowGrad.addColorStop(0.55, 'rgba(217, 119, 6, 0.18)');
-    shadowGrad.addColorStop(0.82, 'rgba(245, 158, 11, 0.06)');
-    shadowGrad.addColorStop(1, 'rgba(245, 158, 11, 0)');
-    ctx.fillStyle = shadowGrad;
+    // 1. Soft Sunlit Golden Aura / Caustic Glow underneath (bright warm gold, never brown)
+    const auraGrad = ctx.createRadialGradient(cx, cy + 3, r * 0.2, cx, cy + 3, r * 1.45);
+    auraGrad.addColorStop(0, 'rgba(251, 191, 36, 0.36)');
+    auraGrad.addColorStop(0.55, 'rgba(253, 224, 71, 0.18)');
+    auraGrad.addColorStop(1, 'rgba(254, 240, 138, 0)');
+    ctx.fillStyle = auraGrad;
     ctx.beginPath();
-    ctx.arc(cx + 5, cy + 7, r * 1.38, 0, Math.PI * 2);
+    ctx.arc(cx, cy + 3, r * 1.45, 0, Math.PI * 2);
     ctx.fill();
 
-    // 2. Main Translucent Viscous Honey Dome Base
+    // 2. Main Translucent Sunlit Honey Dome
     ctx.save();
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, Math.PI * 2);
     ctx.clip();
 
-    // Rich amber-to-gold translucent body gradient (deeper amber at top-left, glowing nectar at bottom-right)
-    const bodyGrad = ctx.createLinearGradient(cx - r, cy - r, cx + r, cy + r);
-    bodyGrad.addColorStop(0, 'rgba(217, 119, 6, 0.90)');
-    bodyGrad.addColorStop(0.32, 'rgba(245, 158, 11, 0.86)');
-    bodyGrad.addColorStop(0.7, 'rgba(251, 191, 36, 0.88)');
-    bodyGrad.addColorStop(1, 'rgba(253, 224, 71, 0.94)');
+    // Pure luminous honey gradient: warm golden-amber top -> bright sunlit nectar gold bottom
+    const bodyGrad = ctx.createLinearGradient(cx - r * 0.6, cy - r, cx + r * 0.6, cy + r);
+    bodyGrad.addColorStop(0, 'rgba(245, 158, 11, 0.94)');
+    bodyGrad.addColorStop(0.38, 'rgba(251, 191, 36, 0.92)');
+    bodyGrad.addColorStop(0.75, 'rgba(253, 224, 71, 0.95)');
+    bodyGrad.addColorStop(1, 'rgba(254, 249, 195, 0.98)');
     ctx.fillStyle = bodyGrad;
     ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
 
-    // 3. Internal Subsurface Caustic Focal Glow (light focusing through the honey lens at lower-right)
+    // 3. Internal Subsurface Nectar Glow (bright lemon-cream light focusing inside the lower belly)
     const causticGrad = ctx.createRadialGradient(
-      cx + r * 0.32,
-      cy + r * 0.34,
-      r * 0.05,
-      cx + r * 0.25,
-      cy + r * 0.28,
+      cx + r * 0.18,
+      cy + r * 0.32,
+      r * 0.04,
+      cx + r * 0.12,
+      cy + r * 0.24,
       r * 0.78
     );
-    causticGrad.addColorStop(0, 'rgba(254, 249, 195, 0.95)');
-    causticGrad.addColorStop(0.38, 'rgba(253, 224, 71, 0.72)');
-    causticGrad.addColorStop(0.75, 'rgba(251, 191, 36, 0.22)');
-    causticGrad.addColorStop(1, 'rgba(245, 158, 11, 0)');
+    causticGrad.addColorStop(0, 'rgba(255, 255, 255, 0.96)');
+    causticGrad.addColorStop(0.35, 'rgba(254, 249, 195, 0.85)');
+    causticGrad.addColorStop(0.72, 'rgba(253, 224, 71, 0.35)');
+    causticGrad.addColorStop(1, 'rgba(251, 191, 36, 0)');
     ctx.fillStyle = causticGrad;
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, Math.PI * 2);
     ctx.fill();
 
-    // 4. Upper-Left Internal Refraction Depth Crescent (rich organic raw honey tone)
-    ctx.strokeStyle = 'rgba(146, 64, 14, 0.28)';
-    ctx.lineWidth = 4.5;
+    // 4. Clean Golden Surface-Tension Rim (warm honey orange edge, zero brown/mud)
+    ctx.strokeStyle = 'rgba(217, 119, 6, 0.45)';
+    ctx.lineWidth = 2.4;
     ctx.beginPath();
-    ctx.arc(cx + 1.5, cy + 1.5, r - 1.5, Math.PI * 0.85, Math.PI * 1.65);
+    ctx.arc(cx, cy, r - 1, 0, Math.PI * 2);
     ctx.stroke();
 
-    // 5. Delicate Surface-Tension Meniscus Rim (soft translucent amber edge, NOT a cartoon outline)
-    const rimGrad = ctx.createRadialGradient(cx, cy, r * 0.76, cx, cy, r);
-    rimGrad.addColorStop(0, 'rgba(180, 83, 9, 0)');
-    rimGrad.addColorStop(0.82, 'rgba(180, 83, 9, 0.08)');
-    rimGrad.addColorStop(1, 'rgba(146, 64, 14, 0.32)');
-    ctx.fillStyle = rimGrad;
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 6. Primary Curved Liquid Lens Specular Highlight (top-left glossy reflection)
+    // 5. Large Curved Liquid-Glass Specular Highlight (top-left studio reflection)
     ctx.save();
-    ctx.translate(cx - r * 0.36, cy - r * 0.36);
-    ctx.rotate(-Math.PI * 0.25);
-    const specGrad = ctx.createRadialGradient(0, 0, 0.5, 0, 0, r * 0.36);
-    specGrad.addColorStop(0, 'rgba(255, 255, 255, 0.98)');
-    specGrad.addColorStop(0.55, 'rgba(255, 255, 255, 0.78)');
+    ctx.translate(cx - r * 0.34, cy - r * 0.36);
+    ctx.rotate(-Math.PI * 0.24);
+    const specGrad = ctx.createRadialGradient(0, 0, 0.5, 0, 0, r * 0.42);
+    specGrad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+    specGrad.addColorStop(0.6, 'rgba(255, 255, 255, 0.88)');
     specGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
     ctx.fillStyle = specGrad;
     ctx.beginPath();
-    ctx.ellipse(0, 0, r * 0.34, r * 0.19, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 0, r * 0.4, r * 0.22, 0, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
 
-    // 7. Crisp Pinpoint Secondary Specular Glint
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+    // 6. Crisp Secondary Specular Glint
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
     ctx.beginPath();
-    ctx.arc(cx - r * 0.52, cy - r * 0.08, r * 0.075, 0, Math.PI * 2);
+    ctx.arc(cx - r * 0.52, cy - r * 0.04, r * 0.085, 0, Math.PI * 2);
     ctx.fill();
-
-    // 8. Subtle Lower-Right Secondary Rim Reflection
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
-    ctx.lineWidth = 1.6;
-    ctx.lineCap = 'round';
-    ctx.beginPath();
-    ctx.arc(cx, cy, r * 0.86, Math.PI * 0.12, Math.PI * 0.38);
-    ctx.stroke();
 
     ctx.restore();
     ctx.restore();
@@ -803,15 +808,15 @@ export class SpiderCabinetEngine {
       const rect = el.getBoundingClientRect();
       if (rect.width < 2 || rect.height < 2) continue;
 
-      if (el.tagName === 'IMG' || el.classList.contains('cabinet-obj')) {
+      if (el.classList.contains('cabinet-obj')) {
         const prev = existingMap.get(el);
         nextWobble.push(
           prev
-            ? { ...prev, rect }
+            ? { ...prev, rect, stickBottom: false }
             : {
                 el,
                 rect,
-                stickBottom: el.dataset.stick === 'bottom',
+                stickBottom: false,
                 angle: 0,
                 va: 0,
                 ox: 0,
@@ -1108,120 +1113,50 @@ export class SpiderCabinetEngine {
     this.updateAnchoringAndSilk(dt);
   }
 
-  private updateFly(dt: number) {
-    const B = this.clock;
-    // Target alpha (fades out over controls or when pointer leaves window)
-    const targetAlpha = this.pointer.active && !this.pointer.overControl ? 1 : 0;
-    this.fly.alpha += (targetAlpha - this.fly.alpha) * (1 - Math.exp(-14 * dt));
-
-    if (this.fly.caught > 0) {
-      this.fly.caught -= dt;
-      this.fly.cocoonProgress = Math.min(1, this.fly.cocoonProgress + dt * 1.4);
-      // Trembles at 47 and 31 Hz
-      this.fly.x = this.fly.cocoonX + Math.sin(47 * B * Math.PI * 2) * 1.6;
-      this.fly.y = this.fly.cocoonY + Math.cos(31 * B * Math.PI * 2) * 1.6;
-
-      if (this.fly.caught <= 0) {
-        // Breaks free and is flung 150px away, while cocoon fades
-        const angle = Math.random() * Math.PI * 2;
-        this.fly.x += Math.cos(angle) * 150;
-        this.fly.y += Math.sin(angle) * 150;
-        this.fly.recoil = 1;
-        this.fly.cocoonFade = 1;
-        this.vibrateWebAt(this.fly.cocoonX, this.fly.cocoonY, 110, 2.2);
-      }
-      return;
-    }
-
-    if (this.fly.cocoonFade > 0) {
-      this.fly.cocoonFade = Math.max(0, this.fly.cocoonFade - dt * 1.2);
-    }
-    this.fly.recoil = Math.max(0, this.fly.recoil - dt * 2.5);
-
-    // Landing: after 1.2s still, landed ramps up 3/s (down 10/s)
-    if (this.pointer.stillTime > 1.2) {
-      this.fly.landed = Math.min(1, this.fly.landed + 3 * dt);
-    } else {
-      this.fly.landed = Math.max(0, this.fly.landed - 10 * dt);
-    }
-
-    // High-frequency mechanical drone piezo/servo stabilization jitter
-    const jitterScale = 1 - this.fly.landed;
-    const jx = (Math.sin(64.0 * B) * 0.75 + Math.cos(112.0 * B + 0.9) * 0.45) * 1.45 * jitterScale;
-    const jy = (Math.cos(72.0 * B + 0.4) * 0.75 + Math.sin(128.0 * B) * 0.45) * 1.45 * jitterScale;
-
-    const ease = 1 - Math.exp(-(32 - 20 * this.fly.recoil) * dt);
-    const oldX = this.fly.x;
-    const oldY = this.fly.y;
-    this.fly.x += (this.pointer.x + jx - this.fly.x) * ease;
-    this.fly.y += (this.pointer.y + jy - this.fly.y) * ease;
-
-    this.fly.vx = (this.fly.x - oldX) / dt;
-    this.fly.vy = (this.fly.y - oldY) / dt;
-    const speed = Math.hypot(this.fly.vx, this.fly.vy);
-    if (speed > 60) {
-      const targetH = Math.atan2(this.fly.vy, this.fly.vx) + Math.PI / 2;
-      const diff = Math.atan2(Math.sin(targetH - this.fly.heading), Math.cos(targetH - this.fly.heading));
-      this.fly.heading += diff * (1 - Math.exp(-14 * dt));
-    }
+  private updateFly(_dt: number) {
+    // Cursor-following secondary bee/drone disabled per user request
+    this.fly.alpha = 0;
+    this.fly.caught = 0;
+    this.fly.cocoonFade = 0;
   }
 
   private updateImageNudges(dt: number) {
-    // Section 9: Objects react when spider walks past within 260K at speed > 40
-    const reach = 260 * this.K;
+    // Smooth 3D zero-gravity levitation + cushioned aerodynamic nudge for all 4 Platform Emblems
+    const reach = 210 * this.K;
     let anyMoving = false;
 
-    for (const item of this.wobbleItems) {
+    for (let idx = 0; idx < this.wobbleItems.length; idx++) {
+      const item = this.wobbleItems[idx];
       const cx = item.rect.left + item.rect.width * 0.5 + item.ox;
-      const cy = item.rect.top + (item.stickBottom ? item.rect.height : item.rect.height * 0.5) + item.oy;
+      const cy = item.rect.top + item.rect.height * 0.5 + item.oy;
 
       const rx = this.sp.x - cx;
       const ry = this.sp.y - cy;
       const dist = Math.hypot(rx, ry);
-      const boxSize = Math.max(60, Math.hypot(item.rect.width, item.rect.height) * 0.5);
+      const boxSize = Math.max(80, Math.hypot(item.rect.width, item.rect.height) * 0.5);
 
-      if (dist < reach + boxSize * 0.6 && this.sp.speed > 40 && !this.sp.intro) {
+      if (dist < reach + boxSize * 0.45 && this.sp.speed > 50 && !this.sp.intro) {
+        const proximity = Math.max(0, 1 - dist / (reach + boxSize * 0.45));
         const cross = (rx * this.sp.vy - ry * this.sp.vx) / (boxSize * boxSize);
-        const clampedTorque = Math.max(-2.5, Math.min(2.5, cross));
-        item.va += clampedTorque * 120 * dt;
-        if (!item.stickBottom) {
-          item.vx += 0.85 * this.sp.vx * dt;
-          item.vy += 0.85 * this.sp.vy * dt;
-        }
+        const clampedTorque = Math.max(-0.8, Math.min(0.8, cross));
+        item.va += clampedTorque * 16 * proximity * dt;
+        item.vx += 0.18 * this.sp.vx * proximity * dt;
+        item.vy += 0.18 * this.sp.vy * proximity * dt;
       }
 
-      // Spring forces
-      const maxAngle = item.stickBottom ? 8 : 24;
-      const angleSpring = item.stickBottom ? 20 : 8;
-      if (Math.abs(item.angle) > maxAngle) {
-        const excess = item.angle - Math.sign(item.angle) * maxAngle;
-        item.va -= excess * angleSpring * dt;
-      } else {
-        item.va -= item.angle * 3.5 * dt;
-      }
+      // Smooth critically-damped spring restoring forces (no jerky snapping)
+      item.va -= item.angle * 6.5 * dt;
+      item.vx -= item.ox * 5.2 * dt;
+      item.vy -= item.oy * 5.2 * dt;
 
-      if (!item.stickBottom) {
-        const offsetMag = Math.hypot(item.ox, item.oy);
-        if (offsetMag > 50) {
-          const excess = (offsetMag - 50) / offsetMag;
-          item.vx -= item.ox * excess * 8 * dt;
-          item.vy -= item.oy * excess * 8 * dt;
-        } else {
-          item.vx -= item.ox * 2.4 * dt;
-          item.vy -= item.oy * 2.4 * dt;
-        }
-      }
-
-      const damp = Math.exp(-2.8 * dt);
+      const damp = Math.exp(-4.6 * dt);
       item.va *= damp;
       item.vx *= damp;
       item.vy *= damp;
 
-      item.angle += item.va * dt * 18;
-      if (!item.stickBottom) {
-        item.ox += item.vx * dt;
-        item.oy += item.vy * dt;
-      }
+      item.angle = Math.max(-7, Math.min(7, item.angle + item.va * dt * 10));
+      item.ox = Math.max(-18, Math.min(18, item.ox + item.vx * dt));
+      item.oy = Math.max(-18, Math.min(18, item.oy + item.vy * dt));
 
       if (Math.abs(item.va) > 0.02 || Math.hypot(item.vx, item.vy) > 0.2) {
         anyMoving = true;
@@ -1229,10 +1164,17 @@ export class SpiderCabinetEngine {
         this.resampleTimer = 0.3;
       }
 
-      item.el.style.rotate = `${item.angle.toFixed(2)}deg`;
-      if (!item.stickBottom) {
-        item.el.style.translate = `${item.ox.toFixed(1)}px ${item.oy.toFixed(1)}px`;
-      }
+      // Gentle continuous 3D levitation bob so Etsy & all platforms feel alive and weightless
+      const floatX = Math.cos(this.clock * 1.15 + idx * 1.8) * 2.5;
+      const floatY = Math.sin(this.clock * 1.65 + idx * 1.5) * 5.5;
+      const floatAngle = Math.sin(this.clock * 1.25 + idx * 2.1) * 1.4;
+
+      const totalAngle = item.angle + floatAngle;
+      const totalX = item.ox + floatX;
+      const totalY = item.oy + floatY;
+
+      item.el.style.rotate = `${totalAngle.toFixed(2)}deg`;
+      item.el.style.translate = `${totalX.toFixed(1)}px ${totalY.toFixed(1)}px`;
     }
 
     if (!anyMoving && this.needsResample) {
@@ -1479,8 +1421,27 @@ export class SpiderCabinetEngine {
     this.forage.lastPlatformIdx = chosenIdx;
 
     const item = this.wobbleItems[chosenIdx];
-    const cx = item.rect.left + item.rect.width * (0.36 + Math.random() * 0.28) + item.ox;
-    const cy = item.rect.top + item.rect.height * (0.36 + Math.random() * 0.28) + item.oy;
+    const r = item.rect;
+    const centerX = r.left + r.width * 0.5 + item.ox;
+    const centerY = r.top + r.height * 0.5 + item.oy;
+
+    // Pick a point strictly on the OUTER RIM (mép ngoài) of the 3D Platform Logo
+    // For bottom-docked logo (Etsy 'E'), perch along the top / upper-left / upper-right outer contour
+    let rimAngle: number;
+    if (item.stickBottom) {
+      rimAngle = -Math.PI * (0.12 + Math.random() * 0.76);
+    } else {
+      // Favor outer perimeter angles (top, left, right, or upper/lower-side rims)
+      rimAngle = Math.random() * Math.PI * 2;
+    }
+
+    // Outer contour radius (0.37 to 0.43 of bounding box width/height = right on the outer edge of the 3D letter)
+    const rimRadiusX = r.width * (0.37 + Math.random() * 0.06);
+    const rimRadiusY = r.height * (0.37 + Math.random() * 0.06);
+
+    const cx = centerX + Math.cos(rimAngle) * rimRadiusX;
+    const cy = centerY + Math.sin(rimAngle) * rimRadiusY;
+
     return {
       x: Math.max(60, Math.min(this.W - 60, cx)),
       y: Math.max(60, Math.min(this.H - 60, cy)),
@@ -1488,19 +1449,68 @@ export class SpiderCabinetEngine {
   }
 
   private pickRandomHivePoint(): Vec2 {
+    // 1. Check central 'ecommarketdata' wordmark (.frame .found) and land on its OUTER EDGE (mép ngoài)
     const foundEl = document.querySelector<HTMLElement>('.frame .found');
     if (foundEl) {
       const r = foundEl.getBoundingClientRect();
       if (r.width > 40 && r.height > 20) {
+        const edgeRoll = Math.random();
+        let px: number;
+        let py: number;
+        if (edgeRoll < 0.44) {
+          // Top outer rim of 'ecommarketdata' letters
+          px = r.left + r.width * (0.06 + Math.random() * 0.88);
+          py = r.top + r.height * (0.04 + Math.random() * 0.10);
+        } else if (edgeRoll < 0.76) {
+          // Bottom outer rim of 'ecommarketdata' letters
+          px = r.left + r.width * (0.06 + Math.random() * 0.88);
+          py = r.bottom - r.height * (0.02 + Math.random() * 0.09);
+        } else if (edgeRoll < 0.88) {
+          // Left outer rim (outer edge of 'e')
+          px = r.left + r.width * (0.01 + Math.random() * 0.06);
+          py = r.top + r.height * (0.14 + Math.random() * 0.72);
+        } else {
+          // Right outer rim (outer edge of 'm' / 'marketdata')
+          px = r.right - r.width * (0.01 + Math.random() * 0.06);
+          py = r.top + r.height * (0.14 + Math.random() * 0.72);
+        }
         return {
-          x: r.left + r.width * (0.28 + Math.random() * 0.44),
-          y: r.top + r.height * (0.32 + Math.random() * 0.36),
+          x: Math.max(60, Math.min(this.W - 60, px)),
+          y: Math.max(60, Math.min(this.H - 60, py)),
         };
       }
     }
+
+    // 2. If .tech-hive-core is present, pick only from the OUTER RING of hexagonal cells
+    const hiveEl = document.querySelector<HTMLElement>('.tech-hive-core');
+    if (hiveEl) {
+      const r = hiveEl.getBoundingClientRect();
+      if (r.width > 80 && r.height > 40) {
+        const outerRingCells: [number, number][] = [
+          [516, 89],
+          [600, 89],
+          [684, 89],
+          [474, 162],
+          [726, 162],
+          [432, 235],
+          [768, 235],
+          [474, 308],
+          [726, 308],
+          [516, 381],
+          [600, 381],
+          [684, 381],
+        ];
+        const [vx, vy] = outerRingCells[Math.floor(Math.random() * outerRingCells.length)];
+        return {
+          x: r.left + (vx / 1200) * r.width,
+          y: r.top + (vy / 660) * r.height,
+        };
+      }
+    }
+
     return {
-      x: this.W * (0.38 + Math.random() * 0.24),
-      y: this.H * (0.44 + Math.random() * 0.1),
+      x: this.W * (0.32 + Math.random() * 0.36),
+      y: this.H * (Math.random() < 0.5 ? 0.38 : 0.56),
     };
   }
 
@@ -1510,36 +1520,36 @@ export class SpiderCabinetEngine {
 
     const dx = to.x - from.x;
     const dy = to.y - from.y;
-    const dist = Math.max(80, Math.hypot(dx, dy));
+    const dist = Math.max(85, Math.hypot(dx, dy));
     const ux = dx / dist;
     const uy = dy / dist;
     const nx = -uy;
     const ny = ux;
 
-    // Compact, organic curved flight path with shorter detour distance
+    // Balanced organic curved flight path (graceful arc without excessive detour)
     const styleRoll = Math.random();
     let offset1: number;
     let offset2: number;
 
-    if (styleRoll < 0.5) {
-      // Gentle C-arc
+    if (styleRoll < 0.48) {
+      // Sweeping C-arc
       const side = Math.random() < 0.5 ? 1 : -1;
-      offset1 = side * dist * (0.10 + Math.random() * 0.12);
-      offset2 = side * dist * (0.08 + Math.random() * 0.12);
-    } else if (styleRoll < 0.85) {
-      // Subtle S-curve
+      offset1 = side * dist * (0.16 + Math.random() * 0.16);
+      offset2 = side * dist * (0.14 + Math.random() * 0.15);
+    } else if (styleRoll < 0.84) {
+      // S-curve meander
       const side = Math.random() < 0.5 ? 1 : -1;
-      offset1 = side * dist * (0.11 + Math.random() * 0.12);
-      offset2 = -side * dist * (0.09 + Math.random() * 0.11);
+      offset1 = side * dist * (0.18 + Math.random() * 0.16);
+      offset2 = -side * dist * (0.15 + Math.random() * 0.15);
     } else {
-      // Slight asymmetric bank
+      // Swooping bank
       const side = Math.random() < 0.5 ? 1 : -1;
-      offset1 = side * dist * (0.15 + Math.random() * 0.10);
-      offset2 = side * dist * (0.05 + Math.random() * 0.08);
+      offset1 = side * dist * (0.24 + Math.random() * 0.15);
+      offset2 = side * dist * (0.08 + Math.random() * 0.12);
     }
 
-    const along1 = 0.28 + Math.random() * 0.14;
-    const along2 = 0.64 + Math.random() * 0.14;
+    const along1 = 0.26 + Math.random() * 0.16;
+    const along2 = 0.63 + Math.random() * 0.16;
 
     const clampX = (x: number) => Math.max(65, Math.min(this.W - 65, x));
     const clampY = (y: number) => Math.max(65, Math.min(this.H - 65, y));
@@ -1554,18 +1564,30 @@ export class SpiderCabinetEngine {
     };
 
     this.forage.legT = 0;
-    const cruiseSpeed = 340 + Math.random() * 110;
-    this.forage.legDur = Math.max(1.1, Math.min(2.2, (dist * 1.06) / cruiseSpeed));
+    const cruiseSpeed = 325 + Math.random() * 115;
+    this.forage.legDur = Math.max(1.2, Math.min(2.45, (dist * 1.1) / cruiseSpeed));
     this.forage.wavePhase = Math.random() * Math.PI * 2;
-    this.forage.waveFreq = (1.2 + Math.random() * 1.4) * Math.PI;
-    this.forage.waveAmp = (5 + Math.random() * 9) * (Math.random() < 0.5 ? 1 : -1);
+    this.forage.waveFreq = (1.35 + Math.random() * 1.6) * Math.PI;
+    this.forage.waveAmp = (8 + Math.random() * 13) * (Math.random() < 0.5 ? 1 : -1);
+  }
+
+  private getPlatformAccentColor(idx: number): string {
+    const accents = [
+      'rgba(251, 146, 60, 0.92)', // Shopee: Warm Tangerine-Gold Nectar
+      'rgba(244, 114, 182, 0.88)', // TikTok Shop: Floral Rose-Gold Nectar
+      'rgba(250, 204, 21, 0.95)', // Amazon: Sunburst Amber-Gold Nectar
+      'rgba(163, 230, 53, 0.88)', // Shopify: Clover Meadow-Gold Nectar
+    ];
+    return accents[((idx % accents.length) + accents.length) % accents.length];
   }
 
   private startNextForageToPlatform() {
     this.forage.initialized = true;
     this.forage.phase = 'TO_PLATFORM';
     this.forage.carryingHoney = false;
+    this.forage.cargoFill = 0;
     const dest = this.pickRandomPlatformPoint();
+    this.forage.platformAccent = this.getPlatformAccentColor(this.forage.targetPlatformIdx);
     this.planRandomBezierLeg({ x: this.sp.x, y: this.sp.y }, dest);
   }
 
@@ -1573,8 +1595,11 @@ export class SpiderCabinetEngine {
     this.forage.initialized = true;
     this.forage.phase = 'TO_HIVE';
     this.forage.carryingHoney = true;
+    this.forage.cargoFill = 1;
     const dest = this.pickRandomHivePoint();
     this.planRandomBezierLeg({ x: this.sp.x, y: this.sp.y }, dest);
+    // Laden with honey and pollen baskets -> slightly heavier, deliberate return cruise
+    this.forage.legDur *= 1.12;
   }
 
   private evalBezierPoint(u: number): Vec2 {
@@ -1605,8 +1630,10 @@ export class SpiderCabinetEngine {
 
   private updateAutonomousForaging(dt: number) {
     const f = this.forage;
+    f.pollenSpawnCooldown = Math.max(0, f.pollenSpawnCooldown - dt);
 
     if (f.phase === 'TO_PLATFORM' || f.phase === 'TO_HIVE') {
+      f.cargoFill = f.phase === 'TO_HIVE' ? 1 : Math.max(0, f.cargoFill - dt * 5);
       f.legT = Math.min(1, f.legT + dt / f.legDur);
       // Smooth ease-in-out flight velocity profile (accelerates smoothly from platform, cruises, decelerates into target)
       const u = f.legT;
@@ -1644,35 +1671,45 @@ export class SpiderCabinetEngine {
         this.sp.angVel = 0;
       }
 
+      // No trail left behind in flight per user request
+
       if (f.legT >= 1) {
         if (f.phase === 'TO_PLATFORM') {
-          // Arrived at Platform -> hover & harvest honey!
+          // Arrived at outer edge of Platform Logo -> hover & harvest honey + pack pollen baskets!
           f.phase = 'HARVESTING';
-          f.dwellTimer = 0.65 + Math.random() * 0.45;
+          f.harvestTotalDur = 0.78 + Math.random() * 0.35;
+          f.dwellTimer = f.harvestTotalDur;
           f.dwellAnchor = { x: this.sp.x, y: this.sp.y };
+          f.cargoFill = 0.05;
           this.sp.lt = 0.7;
 
-          // Gently rock the 3D platform emblem as the bee lands to harvest
+          // Gently cushion the 3D platform emblem downward as the bee lands on its outer rim
           const item = this.wobbleItems[f.targetPlatformIdx];
           if (item) {
-            item.va += (Math.random() < 0.5 ? 1 : -1) * (12 + Math.random() * 8);
+            item.vy += 22;
+            item.va += (Math.random() < 0.5 ? 1 : -1) * 0.9;
           }
         } else {
-          // Arrived at central 'ecommarketdata' -> deposit harvested honey!
+          // Arrived at outer edge of central logo -> deposit harvested honey & pollen into ecommarketdata!
           f.phase = 'DEPOSITING';
-          f.dwellTimer = 0.55 + Math.random() * 0.4;
+          f.depositTotalDur = 0.68 + Math.random() * 0.32;
+          f.dwellTimer = f.depositTotalDur;
           f.dwellAnchor = { x: this.sp.x, y: this.sp.y };
+          f.cargoFill = 1;
           this.sp.lt = 0.75;
-          // Deposit 1-2 subtle golden honey drops onto ecommarketdata
           const spPos = this.getSpinneretWorld();
-          this.vibrateWebAt(spPos.x, spPos.y, 45, 0.9);
+          this.vibrateWebAt(spPos.x, spPos.y, 45, 0.95);
         }
       }
     } else if (f.phase === 'HARVESTING') {
       f.dwellTimer -= dt;
-      // Lively micro-figure-8 hover while extracting honey from the 3D Platform logo
-      const orbitX = Math.sin(this.clock * 7.5) * 7;
-      const orbitY = Math.sin(this.clock * 15.0) * 4;
+      // Smoothly fill the bee's honey stomach, hind-leg pollen baskets, and hexagonal nectar pod from 0 -> 1
+      const rawFill = 1 - Math.max(0, f.dwellTimer) / Math.max(0.1, f.harvestTotalDur);
+      f.cargoFill = rawFill * rawFill * (3 - 2 * rawFill);
+
+      // Tight micro-hover right on the outer rim of the 3D Platform logo while sipping nectar
+      const orbitX = Math.sin(this.clock * 7.5) * 3.0;
+      const orbitY = Math.sin(this.clock * 15.0) * 1.8;
       const oldX = this.sp.x;
       const oldY = this.sp.y;
       this.sp.x = f.dwellAnchor.x + orbitX;
@@ -1680,11 +1717,41 @@ export class SpiderCabinetEngine {
       this.sp.vx = (this.sp.x - oldX) / dt;
       this.sp.vy = (this.sp.y - oldY) / dt;
       this.sp.speed = Math.hypot(this.sp.vx, this.sp.vy);
-      this.sp.angVel = Math.cos(this.clock * 7.5) * 0.8;
-      this.sp.heading += this.sp.angVel * dt * 0.25;
+      this.sp.angVel = Math.cos(this.clock * 9.5) * 0.65;
+      this.sp.heading += this.sp.angVel * dt * 0.2;
+
+      // Siphon golden pollen & nectar motes from the Platform rim into the bee's mouthparts & hind-leg pollen baskets
+      if (f.pollenSpawnCooldown <= 0) {
+        f.pollenSpawnCooldown = 0.048;
+        const mouthPos = this.bodyToWorld(230, 0);
+        const side = Math.random() < 0.5 ? 1 : -1;
+        const toBasket = Math.random() < 0.55;
+        const destPos = toBasket ? this.bodyToWorld(-68, side * 90) : this.bodyToWorld(-28, 0);
+        const srcX = mouthPos.x + (Math.random() - 0.5) * 26;
+        const srcY = mouthPos.y + (Math.random() - 0.5) * 26;
+
+        this.pollenMotes.push({
+          x: srcX,
+          y: srcY,
+          vx: 0,
+          vy: 0,
+          startX: srcX,
+          startY: srcY,
+          targetX: destPos.x,
+          targetY: destPos.y,
+          size: 3.0 + Math.random() * 2.2,
+          rot: Math.random() * Math.PI * 2,
+          vRot: (Math.random() - 0.5) * 9,
+          born: this.clock,
+          maxLife: 0.28 + Math.random() * 0.12,
+          accentColor: f.platformAccent,
+          mode: 'siphon',
+        });
+      }
 
       if (f.dwellTimer <= 0) {
-        // Honey sac is now full! Start flying back to ecommarketdata with sparse, natural drips
+        // Honey sac & pollen baskets are now 100% full! Start flying back to ecommarketdata
+        f.cargoFill = 1;
         this.spillCooldown = 0.14 + Math.random() * 0.18;
         this.spillBurstRemaining = 1;
         this.spillBurstSize = 3.2 + Math.random() * 1.8;
@@ -1692,8 +1759,12 @@ export class SpiderCabinetEngine {
       }
     } else if (f.phase === 'DEPOSITING') {
       f.dwellTimer -= dt;
-      const orbitX = Math.cos(this.clock * 6.5) * 5;
-      const orbitY = Math.sin(this.clock * 13.0) * 3.5;
+      // Smoothly unload the golden honey & pollen baskets into 'ecommarketdata' (1 -> 0)
+      const rem = Math.max(0, f.dwellTimer) / Math.max(0.1, f.depositTotalDur);
+      f.cargoFill = rem * rem * (3 - 2 * rem);
+
+      const orbitX = Math.cos(this.clock * 6.5) * 2.8;
+      const orbitY = Math.sin(this.clock * 13.0) * 1.8;
       const oldX = this.sp.x;
       const oldY = this.sp.y;
       this.sp.x = f.dwellAnchor.x + orbitX;
@@ -1703,8 +1774,33 @@ export class SpiderCabinetEngine {
       this.sp.speed = Math.hypot(this.sp.vx, this.sp.vy);
       this.sp.angVel = 0;
 
+      // Stream golden hexagonal nectar-data packets from the bee into the 'ecommarketdata' letters
+      if (f.pollenSpawnCooldown <= 0) {
+        f.pollenSpawnCooldown = 0.052;
+        const podPos = this.bodyToWorld(-28, 0);
+        const mouthPos = this.bodyToWorld(215, (Math.random() - 0.5) * 60);
+        this.pollenMotes.push({
+          x: podPos.x,
+          y: podPos.y,
+          vx: 0,
+          vy: 0,
+          startX: podPos.x,
+          startY: podPos.y,
+          targetX: mouthPos.x,
+          targetY: mouthPos.y,
+          size: 3.2 + Math.random() * 2.4,
+          rot: Math.random() * Math.PI * 2,
+          vRot: (Math.random() - 0.5) * 8,
+          born: this.clock,
+          maxLife: 0.28 + Math.random() * 0.12,
+          accentColor: f.platformAccent,
+          mode: 'deposit',
+        });
+      }
+
       if (f.dwellTimer <= 0) {
-        // Finished depositing at ecommarketdata -> fly out to next random Platform!
+        // Finished depositing at ecommarketdata -> fly out empty & agile to next random Platform!
+        f.cargoFill = 0;
         this.startNextForageToPlatform();
       }
     }
@@ -1722,12 +1818,8 @@ export class SpiderCabinetEngine {
   // ============================================================================
 
   private getSpinneretWorld(): Vec2 {
-    // Spinneret is at (627, 150) in sprite space -> body space (-450, 0) rotated around waist (-52, 0) by sway
-    const waistX = -52;
-    const dx = -450 - waistX;
-    const bx = waistX + dx * Math.cos(this.sp.sway);
-    const by = dx * Math.sin(this.sp.sway);
-    return this.bodyToWorld(bx, by);
+    // Honey Basket / Nectar Orb position right under the bee's thorax/legs (bx = -35, NOT the rear tail!)
+    return this.bodyToWorld(-35, 0);
   }
 
   private createThread(a: Vec2, b: Vec2, thickness: number, withDrops: boolean): SilkThread {
@@ -1857,23 +1949,23 @@ export class SpiderCabinetEngine {
         ? dirAngle + (Math.random() - 0.5) * 0.45
         : Math.random() * Math.PI * 2;
 
-    // Physical motion parameters (compact airborne arc + short viscous surface ooze):
+    // Physical motion parameters (balanced airborne arc + visible viscous surface ooze):
     const maxAirTime =
-      airborneDur !== undefined ? airborneDur : 0.08 + Math.random() * 0.11;
+      airborneDur !== undefined ? airborneDur : 0.12 + Math.random() * 0.16;
     const vx =
       initVx !== undefined
         ? initVx
-        : this.sp.vx * (0.10 + Math.random() * 0.12) + (Math.random() - 0.5) * 32;
+        : this.sp.vx * (0.13 + Math.random() * 0.16) + (Math.random() - 0.5) * 48;
     const vy =
       initVy !== undefined
         ? initVy
-        : this.sp.vy * (0.10 + Math.random() * 0.12) + 16 + Math.random() * 28;
+        : this.sp.vy * (0.12 + Math.random() * 0.16) + 22 + Math.random() * 40;
 
-    // 2. Surface viscous ooze speed: subtle, short downward honey slide after landing
+    // 2. Surface viscous ooze speed: heavier drops slowly slide/drip downward after landing
     const oozeVy = isBigStreak
-      ? 6 + Math.random() * 8
-      : !isTiny && Math.random() < 0.5
-        ? 2.5 + Math.random() * 5
+      ? 10 + Math.random() * 14
+      : !isTiny && Math.random() < 0.6
+        ? 4.5 + Math.random() * 8
         : 0;
 
     this.splats.push({
@@ -1892,15 +1984,12 @@ export class SpiderCabinetEngine {
       rot,
       fallingOff: false,
       born: this.clock,
-      maxLife: (isBigStreak ? 4.6 : 3.8) + Math.random() * 0.9,
+      maxLife: (isBigStreak ? 5.6 : 4.8) + Math.random() * 1.0,
       satellites,
     });
   }
 
   private pinLiveThread(pinPt: Vec2) {
-    // Spill a single honey drop at anchor point
-    const mainR = 3.0 + Math.random() * 2.0;
-    this.spawnHoneySplat(pinPt.x, pinPt.y, mainR, 0.18, this.sp.heading);
     this.liveAnchor = { x: pinPt.x, y: pinPt.y };
   }
 
@@ -1908,34 +1997,15 @@ export class SpiderCabinetEngine {
     // No threads
   }
 
-  private vibrateWebAt(x: number, y: number, _radius: number, strength: number) {
-    // Fling 1-2 subtle honey droplets outward when depositing or pouncing
-    const count = Math.min(2, Math.max(1, Math.round(strength * 1.1)));
-    for (let i = 0; i < count; i++) {
-      const ang = Math.random() * Math.PI * 2;
-      const flingSpeed = (24 + Math.random() * 42) * Math.min(1.2, strength * 0.55);
-      const splashR =
-        i === 0
-          ? 3.4 + Math.random() * 1.8
-          : 1.2 + Math.random() * 1.2;
-      this.spawnHoneySplat(
-        x + Math.cos(ang) * 4,
-        y + Math.sin(ang) * 4,
-        splashR,
-        0.2,
-        ang,
-        Math.cos(ang) * flingSpeed,
-        Math.sin(ang) * flingSpeed + 12,
-        0.09 + Math.random() * 0.09
-      );
-    }
+  private vibrateWebAt(_x: number, _y: number, _radius: number, _strength: number) {
+    // No honey trail or splats dropped
   }
 
   private updateAnchoringAndSilk(dt: number) {
     const spPos = this.getSpinneretWorld();
     this.turnSpillCooldown = Math.max(0, this.turnSpillCooldown - dt);
 
-    // Check if clearing honey drops
+    // Keep splats & fallingDrops empty (no honey trail left behind)
     if (this.clearingWeb) {
       this.clearAlpha -= 2.6 * dt;
       if (this.clearAlpha <= 0) {
@@ -1943,95 +2013,10 @@ export class SpiderCabinetEngine {
         this.usedAnchors = [];
         this.splats = [];
         this.fallingDrops = [];
+        this.pollenMotes = [];
         this.clearingWeb = false;
         this.clearAlpha = 1;
         this.liveAnchor = { x: spPos.x, y: spPos.y };
-      }
-    } else if (!this.sp.intro && (this.forage.carryingHoney || this.sp.jumping)) {
-      // Only spill/drip honey sparsely when carrying harvested honey from a Platform back to 'ecommarketdata'
-      // 1. Centrifugal Turn Slosh: occasional 1-2 drop fling on sharp turns
-      if (
-        Math.abs(this.sp.angVel) > 2.2 &&
-        this.sp.speed > 95 &&
-        this.turnSpillCooldown <= 0
-      ) {
-        this.turnSpillCooldown = 0.55 + Math.random() * 0.45;
-        const outwardAngle =
-          this.sp.heading + (this.sp.angVel > 0 ? -Math.PI * 0.5 : Math.PI * 0.5);
-        const flingCount = 1 + (Math.random() < 0.35 ? 1 : 0);
-        for (let i = 0; i < flingCount; i++) {
-          const spread = outwardAngle + (Math.random() - 0.5) * 0.45;
-          const speed = 28 + Math.random() * 42 + i * 14;
-          const r = i === 0 ? 3.2 + Math.random() * 1.8 : 1.1 + Math.random() * 1.3;
-          this.spawnHoneySplat(
-            spPos.x,
-            spPos.y,
-            r,
-            0.22,
-            spread,
-            this.sp.vx * 0.12 + Math.cos(spread) * speed,
-            this.sp.vy * 0.12 + Math.sin(spread) * speed + 14,
-            0.09 + Math.random() * 0.10
-          );
-        }
-      }
-
-      // 2. Sparse, organic honey drips while flying from Platform -> Central 'ecommarketdata'
-      if (this.sp.speed > 18 || this.sp.jumping) {
-        this.spillCooldown -= dt * (this.sp.jumping ? 1.4 : 0.85 + this.sp.speed / 520);
-        if (this.spillCooldown <= 0) {
-          if (this.spillBurstRemaining <= 0) {
-            // 1 to 2 drops per drip event, followed by a clean pause
-            this.spillBurstRemaining = 1 + (Math.random() < 0.32 ? 1 : 0);
-            this.spillBurstSize =
-              Math.random() < 0.38
-                ? 3.8 + Math.random() * 2.0 // Heavy dripping blob ("lúc vệt to")
-                : 1.5 + Math.random() * 1.6; // Delicate small/medium drop ("lúc nhỏ")
-          }
-
-          // Emit one drop with compact lateral/downward motion
-          const perpAngle = this.sp.heading + (Math.random() < 0.5 ? 1 : -1) * (Math.PI * 0.5);
-          const lateralKick = (Math.random() - 0.5) * 36;
-          const backSpray = -10 - Math.random() * 20;
-          const vx =
-            this.sp.vx * 0.12 +
-            Math.cos(this.sp.heading) * backSpray +
-            Math.cos(perpAngle) * lateralKick;
-          const vy =
-            this.sp.vy * 0.12 +
-            Math.sin(this.sp.heading) * backSpray +
-            Math.sin(perpAngle) * lateralKick +
-            18 +
-            Math.random() * 26;
-
-          this.spawnHoneySplat(
-            spPos.x + (Math.random() - 0.5) * 5,
-            spPos.y + (Math.random() - 0.5) * 5,
-            this.spillBurstSize,
-            0.2,
-            this.sp.heading,
-            vx,
-            vy,
-            0.08 + Math.random() * 0.11
-          );
-
-          // Subsequent drop in a 2-drop pair tapers down into a tiny satellite droplet
-          this.spillBurstSize = Math.max(0.85, this.spillBurstSize * (0.48 + Math.random() * 0.18));
-          this.spillBurstRemaining--;
-
-          if (this.spillBurstRemaining > 0) {
-            this.spillCooldown = 0.06 + Math.random() * 0.06;
-          } else {
-            // Longer pause between drips so only a few tasteful drops fall per trip
-            const pauseRoll = Math.random();
-            this.spillCooldown =
-              pauseRoll < 0.45
-                ? 0.32 + Math.random() * 0.22
-                : pauseRoll < 0.85
-                  ? 0.52 + Math.random() * 0.26
-                  : 0.75 + Math.random() * 0.3;
-          }
-        }
       }
     }
 
@@ -2094,6 +2079,33 @@ export class SpiderCabinetEngine {
         // Viscous downward honey creep after landing (creates a live dripping trail!)
         sp.y += sp.oozeVy * dt;
         sp.oozeVy *= Math.exp(-0.92 * dt);
+      }
+    }
+
+    // Update golden hexagonal pollen-data motes (siphon at platform, trail in flight, deposit at hive)
+    for (let i = this.pollenMotes.length - 1; i >= 0; i--) {
+      const pm = this.pollenMotes[i];
+      const age = this.clock - pm.born;
+      if (age >= pm.maxLife || this.clearingWeb) {
+        this.pollenMotes.splice(i, 1);
+        continue;
+      }
+      pm.rot += pm.vRot * dt;
+      const u = Math.max(0, Math.min(1, age / pm.maxLife));
+
+      if (pm.mode === 'siphon' || pm.mode === 'deposit') {
+        // Smooth curved arc between source and target
+        const ease = u * u * (3 - 2 * u);
+        const arcLift = Math.sin(Math.PI * u) * 10;
+        pm.x = pm.startX + (pm.targetX - pm.startX) * ease;
+        pm.y = pm.startY + (pm.targetY - pm.startY) * ease - arcLift;
+      } else {
+        // 'trail': gentle wing-downdraft float & deceleration
+        const drag = Math.exp(-2.8 * dt);
+        pm.vx *= drag;
+        pm.vy = pm.vy * drag + 18 * dt;
+        pm.x += pm.vx * dt;
+        pm.y += pm.vy * dt;
       }
     }
   }
@@ -2186,122 +2198,431 @@ export class SpiderCabinetEngine {
     return popIn * smoothFade * this.clearAlpha;
   }
 
+  private drawSparkleStar(
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    radius: number,
+    alpha: number
+  ) {
+    if (alpha <= 0.01 || radius <= 0.4) return;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(x, y);
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = '#fde047';
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    const inner = radius * 0.24;
+    for (let i = 0; i < 8; i++) {
+      const a = (i * Math.PI) / 4;
+      const d = i % 2 === 0 ? radius : inner;
+      const px = Math.cos(a) * d;
+      const py = Math.sin(a) * d;
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  private drawGoldenTeardrop(
+    ctx: CanvasRenderingContext2D,
+    topX: number,
+    topY: number,
+    botX: number,
+    botY: number,
+    bulbR: number,
+    alpha: number,
+    phaseSeed = 0,
+    oozeSpeed = 0
+  ) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+
+    const dx = botX - topX;
+    const dy = botY - topY;
+    const dist = Math.hypot(dx, dy);
+    const angle = dist > 0.5 ? Math.atan2(dy, dx) - Math.PI * 0.5 : 0;
+    const tailLen = Math.max(bulbR * 1.4, dist);
+
+    // Dynamic shimmer & viscous breathing modulation
+    const shimmer = Math.sin(this.clock * 4.4 + phaseSeed);
+    const shimmer2 = Math.cos(this.clock * 6.2 + phaseSeed * 1.7);
+    const stretchFactor = Math.min(0.28, oozeSpeed / 38 + dist / (bulbR * 14));
+
+    ctx.translate(botX, botY);
+    ctx.rotate(angle);
+
+    // 1. Translucent Warm Golden Refraction Halo (casts an appetizing honey glow on the surface)
+    const halo = ctx.createRadialGradient(
+      bulbR * 0.14,
+      bulbR * 0.28,
+      bulbR * 0.12,
+      0,
+      bulbR * 0.18,
+      bulbR * 1.85
+    );
+    halo.addColorStop(0, 'rgba(245, 158, 11, 0.34)');
+    halo.addColorStop(0.45, 'rgba(251, 191, 36, 0.20)');
+    halo.addColorStop(0.78, 'rgba(253, 224, 71, 0.08)');
+    halo.addColorStop(1, 'rgba(254, 240, 138, 0)');
+    ctx.fillStyle = halo;
+    ctx.beginPath();
+    ctx.arc(0, bulbR * 0.18, bulbR * 1.85, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 2. If stretched by oozing, draw a small translucent meniscus anchor bead at the top origin
+    const tipY = -tailLen;
+    if (tailLen > bulbR * 1.65) {
+      const originR = Math.max(1.4, bulbR * 0.34);
+      const topBeadGrad = ctx.createRadialGradient(0, tipY, 0.2, 0, tipY, originR);
+      topBeadGrad.addColorStop(0, 'rgba(254, 240, 138, 0.88)');
+      topBeadGrad.addColorStop(0.65, 'rgba(245, 158, 11, 0.72)');
+      topBeadGrad.addColorStop(1, 'rgba(217, 119, 6, 0)');
+      ctx.fillStyle = topBeadGrad;
+      ctx.beginPath();
+      ctx.arc(0, tipY, originR, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // 3. Continuous Viscous Teardrop Silhouette (slender golden syrup neck swelling into plump round belly)
+    const rx = bulbR * (1 - stretchFactor * 0.14);
+    const ry = bulbR * (1 + stretchFactor * 0.16);
+    const waistW = rx * Math.max(0.16, 0.28 - stretchFactor * 0.25);
+
+    ctx.beginPath();
+    ctx.moveTo(0, tipY);
+    ctx.bezierCurveTo(
+      waistW,
+      tipY + tailLen * 0.44,
+      rx * 1.08,
+      -ry * 0.56,
+      rx,
+      0
+    );
+    ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI, false);
+    ctx.bezierCurveTo(
+      -rx * 1.08,
+      -ry * 0.56,
+      -waistW,
+      tipY + tailLen * 0.44,
+      0,
+      tipY
+    );
+    ctx.closePath();
+
+    // Rich, Multi-Stop Translucent Liquid Gold & Raw Clover Honey Gradient
+    const bodyGrad = ctx.createLinearGradient(-rx * 0.45, tipY, rx * 0.45, ry);
+    bodyGrad.addColorStop(0, 'rgba(217, 119, 6, 0.72)');
+    bodyGrad.addColorStop(0.28, 'rgba(234, 138, 8, 0.84)');
+    bodyGrad.addColorStop(0.58, 'rgba(245, 158, 11, 0.88)');
+    bodyGrad.addColorStop(0.82, 'rgba(251, 191, 36, 0.92)');
+    bodyGrad.addColorStop(1, 'rgba(254, 240, 138, 0.95)');
+    ctx.fillStyle = bodyGrad;
+    ctx.fill();
+
+    // Subtle warm amber surface-tension meniscus rim
+    ctx.lineWidth = Math.max(0.9, bulbR * 0.12);
+    ctx.strokeStyle = 'rgba(194, 102, 12, 0.44)';
+    ctx.stroke();
+
+    // 4. Internal Subsurface Caustic Focal Glow (dynamic golden-cream light lens inside lower-right belly)
+    const causticX = rx * (0.16 + shimmer * 0.06);
+    const causticY = ry * (0.28 + shimmer2 * 0.05);
+    const bellyGlow = ctx.createRadialGradient(
+      causticX,
+      causticY,
+      bulbR * 0.04,
+      causticX * 0.7,
+      causticY * 0.8,
+      bulbR * 0.82
+    );
+    bellyGlow.addColorStop(0, 'rgba(255, 255, 255, 0.94)');
+    bellyGlow.addColorStop(0.32, 'rgba(254, 249, 195, 0.86)');
+    bellyGlow.addColorStop(0.68, 'rgba(253, 224, 71, 0.38)');
+    bellyGlow.addColorStop(1, 'rgba(245, 158, 11, 0)');
+    ctx.fillStyle = bellyGlow;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, rx * 0.88, ry * 0.88, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 5. Dynamic Specular Highlights (curved liquid-lens reflection + syrup filament sheen + Fresnel rim)
+    // 5a. Glossy specular thread running down the viscous syrup neck
+    if (tailLen > bulbR * 1.45) {
+      const neckSpec = ctx.createLinearGradient(0, tipY + 1, 0, -ry * 0.25);
+      neckSpec.addColorStop(0, 'rgba(255, 255, 255, 0)');
+      neckSpec.addColorStop(0.45, `rgba(255, 255, 255, ${(0.58 + shimmer * 0.15).toFixed(2)})`);
+      neckSpec.addColorStop(1, 'rgba(255, 255, 255, 0.85)');
+      ctx.strokeStyle = neckSpec;
+      ctx.lineWidth = Math.max(0.8, bulbR * 0.16);
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(-waistW * 0.25, tipY + tailLen * 0.22);
+      ctx.quadraticCurveTo(-rx * 0.32, -ry * 0.55, -rx * 0.36, -ry * 0.22);
+      ctx.stroke();
+    }
+
+    // 5b. Primary Dynamic Curved Crescent Specular Highlight on upper-left dome
+    const specOffsetX = -rx * (0.34 - shimmer * 0.035);
+    const specOffsetY = -ry * (0.24 - shimmer2 * 0.035);
+    const specTilt = -0.32 + shimmer * 0.08;
+    const specW = rx * (0.24 + shimmer * 0.025);
+    const specH = ry * (0.42 + stretchFactor * 0.18);
+
+    ctx.save();
+    ctx.translate(specOffsetX, specOffsetY);
+    ctx.rotate(specTilt);
+    const specGrad = ctx.createRadialGradient(0, -specH * 0.15, specW * 0.08, 0, 0, specH);
+    specGrad.addColorStop(0, 'rgba(255, 255, 255, 0.98)');
+    specGrad.addColorStop(0.55, 'rgba(255, 252, 235, 0.78)');
+    specGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+    ctx.fillStyle = specGrad;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, specW, specH, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // 5c. Secondary Dynamic Pinpoint Specular Bead
+    const glintAlpha = 0.82 + 0.18 * shimmer2;
+    ctx.fillStyle = `rgba(255, 255, 255, ${glintAlpha.toFixed(2)})`;
+    ctx.beginPath();
+    ctx.arc(
+      -rx * (0.44 + shimmer * 0.02),
+      ry * (0.18 + shimmer2 * 0.03),
+      bulbR * (0.10 + 0.015 * shimmer),
+      0,
+      Math.PI * 2
+    );
+    ctx.fill();
+
+    // 5d. Lower-Right Internal Fresnel Rim Reflection
+    ctx.strokeStyle = `rgba(255, 253, 230, ${(0.52 + 0.18 * shimmer).toFixed(2)})`;
+    ctx.lineWidth = Math.max(0.9, bulbR * 0.11);
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.arc(0, 0, rx * 0.82, Math.PI * (0.10 + shimmer * 0.03), Math.PI * (0.42 + shimmer2 * 0.03));
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  private drawHoneycombPollenMote(ctx: CanvasRenderingContext2D, pm: PollenMote) {
+    const age = Math.max(0, this.clock - pm.born);
+    if (age >= pm.maxLife) return;
+    const u = age / pm.maxLife;
+    const alpha = Math.sin(Math.PI * u) * this.clearAlpha;
+    if (alpha <= 0.01) return;
+
+    const r = pm.size * (pm.mode === 'trail' ? 1 - 0.25 * u : 0.85 + 0.3 * Math.sin(Math.PI * u));
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.translate(pm.x, pm.y);
+    ctx.rotate(pm.rot);
+
+    // 1. Soft golden pollen glow
+    const glow = ctx.createRadialGradient(0, 0, r * 0.1, 0, 0, r * 2.1);
+    glow.addColorStop(0, 'rgba(254, 240, 138, 0.85)');
+    glow.addColorStop(0.5, 'rgba(251, 191, 36, 0.38)');
+    glow.addColorStop(1, 'rgba(245, 158, 11, 0)');
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 2.1, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 2. Crisp 6-sided Golden Honeycomb Pollen Grain
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+      const a = (i * Math.PI) / 3;
+      const px = Math.cos(a) * r;
+      const py = Math.sin(a) * r;
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+
+    const hexGrad = ctx.createLinearGradient(-r, -r, r, r);
+    hexGrad.addColorStop(0, 'rgba(254, 249, 195, 0.96)');
+    hexGrad.addColorStop(0.55, 'rgba(251, 191, 36, 0.92)');
+    hexGrad.addColorStop(1, pm.accentColor);
+    ctx.fillStyle = hexGrad;
+    ctx.fill();
+
+    ctx.lineWidth = 0.85;
+    ctx.strokeStyle = 'rgba(217, 119, 6, 0.75)';
+    ctx.stroke();
+
+    // 3. Pinpoint white specular highlight on top facet
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+    ctx.beginPath();
+    ctx.arc(-r * 0.28, -r * 0.28, r * 0.26, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
   private drawThreadsAndDrops(ctx: CanvasRenderingContext2D) {
     ctx.save();
 
-    // 1. Spilled & Oozing Liquid Honey Droplets (Airborne Arc -> Surface Splash -> Viscous Downward Drip)
+    // 1. Luminous Translucent Golden Honey Teardrops & Viscous Syrup Drips
     for (const sp of this.splats) {
       const alpha = this.computeHoneyAlpha(sp.born, sp.maxLife);
       if (alpha <= 0.0015) continue;
 
+      const age = Math.max(0, this.clock - sp.born);
       const isAirborne = sp.airTime < sp.maxAirTime && sp.maxAirTime > 0;
+      const bulbR = Math.max(2.8, sp.r * 1.48);
 
       if (isAirborne) {
-        // Phase A: Airborne honey droplet falling/arcing off the bee in motion
-        const z = 1 - sp.airTime / sp.maxAirTime; // 1 at bee belly -> 0 on surface
-        const velAngle = Math.atan2(sp.vy, sp.vx);
-        const speedMag = Math.hypot(sp.vx, sp.vy);
-        const stretch = Math.min(1.65, 1 + speedMag / 260);
-        const airScale = 1 + 0.28 * z;
-        const w = sp.r * 2.35 * stretch * airScale;
-        const h = sp.r * 2.15 * airScale;
-
-        ctx.save();
-        // Soft ground shadow below the airborne drop that converges as it lands
-        ctx.globalAlpha = alpha * 0.26 * (1 - 0.4 * z);
-        ctx.fillStyle = 'rgba(180, 83, 9, 0.55)';
-        ctx.beginPath();
-        ctx.ellipse(
-          sp.x + z * 5,
-          sp.y + z * 14,
-          sp.r * 0.9,
-          sp.r * 0.6,
-          0,
-          0,
-          Math.PI * 2
+        // Phase A: Airborne Golden Teardrop detaching from the bee's honey basket
+        const z = 1 - sp.airTime / sp.maxAirTime;
+        const tailX = sp.x - sp.vx * 0.048;
+        const tailY = sp.y - Math.max(bulbR * 1.65, sp.vy * 0.058);
+        this.drawGoldenTeardrop(
+          ctx,
+          tailX,
+          tailY,
+          sp.x,
+          sp.y,
+          bulbR * (0.92 + 0.18 * z),
+          alpha,
+          sp.rot,
+          Math.hypot(sp.vx, sp.vy) * 0.25
         );
-        ctx.fill();
-
-        // Trailing micro-bead behind the falling drop for motion streak feel
-        ctx.globalAlpha = alpha * 0.85;
-        if (sp.r > 1.8) {
-          const tailDist = sp.r * 1.45 * stretch;
-          const tailSz = sp.r * 1.15;
-          ctx.drawImage(
-            this.dewSprite,
-            sp.x - Math.cos(velAngle) * tailDist - tailSz * 0.5,
-            sp.y - Math.sin(velAngle) * tailDist - tailSz * 0.5,
-            tailSz,
-            tailSz
-          );
-        }
-
-        // Main airborne honey drop oriented along its velocity vector
-        ctx.translate(sp.x, sp.y);
-        ctx.rotate(velAngle);
-        ctx.drawImage(this.dewSprite, -w * 0.5, -h * 0.5, w, h);
-        ctx.restore();
       } else {
-        // Phase B: Landed honey drop with viscous downward oozing drip trail
-        ctx.save();
-
+        // Phase B: Landed Golden Honey Teardrop / Viscous Syrup Drip
         const oozeDist = sp.y - sp.landY;
-        if (oozeDist > 1.2) {
-          // Draw tapering viscous honey drip trail from (landX, landY) down to current (x, y)
-          // Scale neck alpha slightly so overlapping stamps fade out just as smoothly as single drops
-          ctx.globalAlpha = alpha * (0.55 + 0.35 * alpha);
-          const steps = Math.min(6, Math.max(2, Math.ceil(oozeDist / Math.max(2.6, sp.r * 0.75))));
-          for (let s = 0; s < steps; s++) {
-            const u = s / steps; // 0 at top origin -> 1 near bottom bulb
-            const tx = sp.landX + (sp.x - sp.landX) * u;
-            const ty = sp.landY + oozeDist * u;
-            // Taper: small bead at top origin, thinner neck in the middle, swelling into the bottom bulb
-            const neckProfile = u < 0.25 ? 0.52 - u * 0.4 : 0.38 + (u - 0.25) * 0.62;
-            const beadW = sp.r * 2.25 * neckProfile;
-            const beadH = beadW * 1.25;
-            ctx.drawImage(this.dewSprite, tx - beadW * 0.5, ty - beadH * 0.5, beadW, beadH);
-          }
-        }
 
-        ctx.globalAlpha = alpha;
-        ctx.translate(sp.x, sp.y);
-
-        // Draw tiny satellite micro-droplets around the landing spot
-        for (const sat of sp.satellites) {
-          const satSize = sat.r * 2.35;
-          ctx.drawImage(
-            this.dewSprite,
-            sat.ox - satSize * 0.5,
-            sat.oy - satSize * 0.5 - oozeDist * 0.65,
-            satSize,
-            satSize
+        // Draw tiny golden companion droplets around the main honey drop using dynamic teardrop/dome rendering
+        for (let sIdx = 0; sIdx < sp.satellites.length; sIdx++) {
+          const sat = sp.satellites[sIdx];
+          const satR = Math.max(1.8, sat.r * 1.35);
+          const sx = sp.landX + sat.ox;
+          const sy = sp.landY + sat.oy;
+          this.drawGoldenTeardrop(
+            ctx,
+            sx,
+            sy - satR * 1.15,
+            sx,
+            sy,
+            satR,
+            alpha * 0.92,
+            sp.rot + sIdx * 1.7,
+            0
           );
         }
 
-        // Draw main refractive liquid honey bulb (elongates slightly while actively oozing down)
-        const oozeStretch = 1 + Math.min(0.32, sp.oozeVy / 45);
-        ctx.rotate(oozeDist > 2 ? 0 : sp.rot);
-        const w = sp.rx * 2.35;
-        const h = sp.ry * 2.35 * oozeStretch;
-        ctx.drawImage(this.dewSprite, -w * 0.5, -h * 0.5, w, h);
+        // Render every main honey drop through drawGoldenTeardrop for rich translucent gold gradient + dynamic specular highlights
+        const topY = oozeDist > 0.6 ? sp.landY : sp.y - bulbR * 1.32;
+        this.drawGoldenTeardrop(
+          ctx,
+          sp.landX,
+          topY,
+          sp.x,
+          sp.y,
+          bulbR,
+          alpha,
+          sp.rot,
+          sp.oozeVy
+        );
 
-        ctx.restore();
+        // Subtle 4-pointed golden nectar sparkle when the honey drop is fresh
+        if (age < 1.35) {
+          const twinkle = Math.max(0, Math.sin(age * 9.5 + sp.rot) * (1 - age / 1.35));
+          this.drawSparkleStar(
+            ctx,
+            sp.x - bulbR * 0.38,
+            sp.y - bulbR * 0.38,
+            bulbR * 0.68,
+            alpha * twinkle * 0.9
+          );
+        }
       }
     }
 
-    // 2. Purely Vertical Falling Liquid Honey Droplets (when hovering or shaking)
+    // 2. Vertical Falling Golden Honey Teardrops
     for (const fd of this.fallingDrops) {
       const alpha = this.computeHoneyAlpha(fd.born, fd.maxLife);
       if (alpha <= 0.0015) continue;
+      const bulbR = Math.max(2.8, fd.r * 1.35);
+      this.drawGoldenTeardrop(
+        ctx,
+        fd.x,
+        fd.y - bulbR * 1.85,
+        fd.x,
+        fd.y,
+        bulbR,
+        alpha,
+        fd.born * 3.1,
+        Math.abs(fd.vy) * 0.08
+      );
+    }
 
+    // 3. Golden Honeycomb Pollen & Nectar Motes (siphoning from platform, trailing in flight, depositing at hive)
+    for (const pm of this.pollenMotes) {
+      this.drawHoneycombPollenMote(ctx, pm);
+    }
+
+    // 4. Golden Nectar Extraction Ripple when bee is sipping nectar at a Platform Logo edge
+    if (this.forage.phase === 'HARVESTING') {
+      const mouthPos = this.bodyToWorld(230, 0);
+      const pulse = (this.clock * 3.6) % 1;
+      const ringR = (28 - pulse * 20) * this.K;
+      const ringAlpha = Math.sin(Math.PI * pulse) * 0.55;
       ctx.save();
-      ctx.globalAlpha = alpha;
-      ctx.translate(fd.x, fd.y);
-      const speedStretch = Math.min(1.35, 1 + Math.abs(fd.vy) / 1400);
-      const w = fd.r * 2.2;
-      const h = w * speedStretch;
-      ctx.drawImage(this.dewSprite, -w * 0.5, -h * 0.5, w, h);
+      ctx.translate(mouthPos.x, mouthPos.y);
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = (Math.PI / 180) * (60 * i - 30) + this.clock * 1.5;
+        const px = Math.cos(a) * ringR;
+        const py = Math.sin(a) * ringR;
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fillStyle = `rgba(254, 240, 138, ${(ringAlpha * 0.35).toFixed(2)})`;
+      ctx.fill();
+      ctx.lineWidth = 1.6;
+      ctx.strokeStyle = `rgba(245, 158, 11, ${ringAlpha.toFixed(2)})`;
+      ctx.stroke();
       ctx.restore();
+    }
+
+    // 5. Active Honeycomb Cell Cluster Charge Pulse when the Cyber-Bee deposits honey into 'ecommarketdata'
+    if (this.forage.phase === 'DEPOSITING') {
+      const pulse = Math.sin(this.clock * 8) * 0.5 + 0.5;
+      const mouthPos = this.bodyToWorld(210, 0);
+      const hexR = (30 + pulse * 6) * this.K;
+      const offsets: [number, number][] = [
+        [0, 0],
+        [hexR * 1.55, -hexR * 0.88],
+        [-hexR * 1.55, -hexR * 0.88],
+      ];
+      for (let cIdx = 0; cIdx < offsets.length; cIdx++) {
+        const [ox, oy] = offsets[cIdx];
+        const cellScale = cIdx === 0 ? 1 : 0.68;
+        const r = hexR * cellScale;
+        ctx.save();
+        ctx.translate(mouthPos.x + ox, mouthPos.y + oy);
+        ctx.beginPath();
+        for (let i = 0; i < 6; i++) {
+          const a = (Math.PI / 180) * (60 * i - 30);
+          const px = Math.cos(a) * r;
+          const py = Math.sin(a) * r;
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.fillStyle = `rgba(251, 191, 36, ${(0.14 + pulse * 0.12) * cellScale})`;
+        ctx.fill();
+        ctx.lineWidth = cIdx === 0 ? 2.0 : 1.3;
+        ctx.strokeStyle = `rgba(245, 158, 11, ${(0.65 + pulse * 0.3) * cellScale})`;
+        ctx.stroke();
+        ctx.restore();
+      }
     }
 
     ctx.restore();
@@ -2330,6 +2651,7 @@ export class SpiderCabinetEngine {
 
     const K = this.K;
     const S = this.imgScale; // 560 / 1254
+    const cargoFill = Math.max(0, Math.min(1, this.forage.cargoFill));
 
     // 1. Draw 6 compact CNC landing/manipulator struts (only 3 pairs, index 0..2, tucked tightly under chassis)
     const sortedLegs = [...this.legs]
@@ -2419,6 +2741,68 @@ export class SpiderCabinetEngine {
         halfW * 2
       );
       octx.restore();
+
+      // Authentic Honeybee Hind-Leg Golden Pollen Baskets (Corbiculae on rear legs index === 2)
+      if (leg.index === 2 && cargoFill > 0.02) {
+        const bx = (kx * 0.44 + fx * 0.56) * K;
+        const by = (ky * 0.44 + fy * 0.56) * K;
+        const basketRx = (26 + Math.sin(this.clock * 8 + leg.side) * 1.5) * K * cargoFill;
+        const basketRy = 19 * K * cargoFill;
+
+        octx.save();
+        octx.translate(bx, by);
+        octx.rotate(tibAng);
+
+        // Warm golden aura around the packed pollen basket
+        const pGlow = octx.createRadialGradient(0, 0, basketRx * 0.15, 0, 0, basketRx * 1.6);
+        pGlow.addColorStop(0, 'rgba(254, 240, 138, 0.75)');
+        pGlow.addColorStop(0.55, 'rgba(245, 158, 11, 0.35)');
+        pGlow.addColorStop(1, 'rgba(217, 119, 6, 0)');
+        octx.fillStyle = pGlow;
+        octx.beginPath();
+        octx.arc(0, 0, basketRx * 1.6, 0, Math.PI * 2);
+        octx.fill();
+
+        // Main plump golden pollen pellet (Corbicula)
+        const pGrad = octx.createRadialGradient(
+          -basketRx * 0.25,
+          -basketRy * 0.25,
+          basketRx * 0.08,
+          0,
+          0,
+          basketRx
+        );
+        pGrad.addColorStop(0, 'rgba(255, 255, 255, 0.98)');
+        pGrad.addColorStop(0.28, 'rgba(254, 240, 138, 0.96)');
+        pGrad.addColorStop(0.68, 'rgba(245, 158, 11, 0.95)');
+        pGrad.addColorStop(1, 'rgba(180, 83, 9, 0.92)');
+        octx.fillStyle = pGrad;
+        octx.beginPath();
+        octx.ellipse(0, 0, basketRx, basketRy, 0, 0, Math.PI * 2);
+        octx.fill();
+
+        // Tiny textured golden pollen granules on the basket surface
+        const granOffsets: [number, number, number][] = [
+          [-0.38, 0.18, 0.26],
+          [0.32, -0.22, 0.24],
+          [0.25, 0.28, 0.22],
+          [-0.12, -0.35, 0.22],
+        ];
+        octx.fillStyle = 'rgba(253, 224, 71, 0.85)';
+        for (const [gx, gy, gr] of granOffsets) {
+          octx.beginPath();
+          octx.arc(gx * basketRx, gy * basketRy, gr * basketRy, 0, Math.PI * 2);
+          octx.fill();
+        }
+
+        // Crisp specular highlight on the pollen basket
+        octx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        octx.beginPath();
+        octx.ellipse(-basketRx * 0.28, -basketRy * 0.28, basketRx * 0.26, basketRy * 0.16, -0.3, 0, Math.PI * 2);
+        octx.fill();
+
+        octx.restore();
+      }
     }
 
     // Helper to draw a 560x560 sprite-space canvas in body space:
@@ -2430,17 +2814,37 @@ export class SpiderCabinetEngine {
       octx.restore();
     };
 
-    // 2. Draw Armored Honey-Data Payload Pod (Abdomen) cleanly without heavy per-frame gradient effects
+    // 2. Draw Honey-Stomach Abdomen (swells slightly & glows warmly like a golden amber lantern when filled with nectar!)
     octx.save();
     const waistX = -52 * K;
     octx.translate(waistX, 0);
     octx.rotate(this.sp.sway);
     const turbinePulse = 1 + Math.sin(this.sp.breathPhase * 2.5) * 0.012;
-    const squashY = 1 - 0.06 * this.sp.lt;
-    const squashX = 2 - squashY;
+    const squashY = (1 - 0.06 * this.sp.lt) * (1 + 0.075 * cargoFill);
+    const squashX = (2 - (1 - 0.06 * this.sp.lt)) * (1 + 0.055 * cargoFill);
     octx.scale(turbinePulse * squashX, turbinePulse * squashY);
     octx.translate(-waistX, 0);
     drawRigLayer(this.abdomenPart);
+
+    // Translucent internal golden-honey abdomen glow when carrying harvested nectar
+    if (cargoFill > 0.02) {
+      const abdX = -245 * K;
+      const abdRx = 148 * K;
+      const abdRy = 136 * K;
+      const shimmer = 0.88 + 0.12 * Math.sin(this.clock * 8);
+      const abdGlow = octx.createRadialGradient(abdX + 18 * K, 0, abdRx * 0.08, abdX, 0, abdRx * 1.15);
+      abdGlow.addColorStop(0, `rgba(254, 249, 195, ${(0.52 * cargoFill * shimmer).toFixed(2)})`);
+      abdGlow.addColorStop(0.45, `rgba(251, 191, 36, ${(0.38 * cargoFill * shimmer).toFixed(2)})`);
+      abdGlow.addColorStop(0.8, `rgba(245, 158, 11, ${(0.16 * cargoFill).toFixed(2)})`);
+      abdGlow.addColorStop(1, 'rgba(217, 119, 6, 0)');
+      octx.save();
+      octx.globalCompositeOperation = 'screen';
+      octx.fillStyle = abdGlow;
+      octx.beginPath();
+      octx.ellipse(abdX, 0, abdRx, abdRy, 0, 0, Math.PI * 2);
+      octx.fill();
+      octx.restore();
+    }
     octx.restore();
 
     // 4. Draw Aero-Thorax & Optical Gimbal Head (or Holo-Visor HUD Matrix when resting)
@@ -2448,6 +2852,78 @@ export class SpiderCabinetEngine {
     octx.globalAlpha = 1 - 0.85 * this.sp.qt;
     drawRigLayer(this.headPart);
     octx.restore();
+
+    // 4b. 3D Hexagonal Honeycomb Nectar-Data Capsule clutched beneath the bee's thorax when harvesting/returning!
+    if (cargoFill > 0.02) {
+      const pulse = Math.sin(this.clock * 9);
+      const orbR = (46 + pulse * 3.5) * K * cargoFill;
+      const orbX = -26 * K;
+
+      octx.save();
+      octx.translate(orbX, 0);
+
+      // Outer warm sunlit honey aura
+      const orbGlow = octx.createRadialGradient(0, 0, orbR * 0.15, 0, 0, orbR * 1.9);
+      orbGlow.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+      orbGlow.addColorStop(0.32, 'rgba(254, 240, 138, 0.88)');
+      orbGlow.addColorStop(0.65, 'rgba(251, 191, 36, 0.48)');
+      orbGlow.addColorStop(1, 'rgba(245, 158, 11, 0)');
+      octx.fillStyle = orbGlow;
+      octx.beginPath();
+      octx.arc(0, 0, orbR * 1.9, 0, Math.PI * 2);
+      octx.fill();
+
+      // Viscous liquid-gold nectar sphere enveloping the honeycomb crystal
+      const sphereGrad = octx.createRadialGradient(-orbR * 0.28, -orbR * 0.28, orbR * 0.08, 0, 0, orbR);
+      sphereGrad.addColorStop(0, 'rgba(255, 255, 255, 0.96)');
+      sphereGrad.addColorStop(0.28, 'rgba(254, 249, 195, 0.92)');
+      sphereGrad.addColorStop(0.65, 'rgba(245, 158, 11, 0.88)');
+      sphereGrad.addColorStop(1, 'rgba(217, 119, 6, 0.82)');
+      octx.fillStyle = sphereGrad;
+      octx.beginPath();
+      octx.arc(0, 0, orbR, 0, Math.PI * 2);
+      octx.fill();
+
+      // Inner rotating 3D Hexagonal Honeycomb Data Cell (links bee foraging to structured ecommarketdata)
+      const hexR = orbR * 0.68;
+      const hexRot = this.clock * 1.6;
+      octx.save();
+      octx.rotate(hexRot);
+      octx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = (i * Math.PI) / 3;
+        const px = Math.cos(a) * hexR;
+        const py = Math.sin(a) * hexR;
+        if (i === 0) octx.moveTo(px, py);
+        else octx.lineTo(px, py);
+      }
+      octx.closePath();
+      octx.fillStyle = this.forage.platformAccent;
+      octx.fill();
+      octx.lineWidth = Math.max(1.1, 2.2 * K);
+      octx.strokeStyle = 'rgba(255, 255, 255, 0.92)';
+      octx.stroke();
+
+      // 3D Isometric Honeycomb Y-axis internal ridges (120 deg)
+      octx.beginPath();
+      for (let i = 0; i < 3; i++) {
+        const a = (i * Math.PI * 2) / 3;
+        octx.moveTo(0, 0);
+        octx.lineTo(Math.cos(a) * hexR, Math.sin(a) * hexR);
+      }
+      octx.lineWidth = Math.max(0.9, 1.6 * K);
+      octx.strokeStyle = 'rgba(254, 249, 195, 0.85)';
+      octx.stroke();
+      octx.restore();
+
+      // Glossy curved specular crescent on the nectar capsule dome
+      octx.fillStyle = 'rgba(255, 255, 255, 0.92)';
+      octx.beginPath();
+      octx.ellipse(-orbR * 0.34, -orbR * 0.32, orbR * 0.32, orbR * 0.16, -0.6, 0, Math.PI * 2);
+      octx.fill();
+
+      octx.restore();
+    }
 
     if (this.sp.qt > 0.01) {
       const qt = this.sp.qt;
@@ -2608,110 +3084,7 @@ export class SpiderCabinetEngine {
     ctx.restore();
   }
 
-  private drawFlyAndCocoon(ctx: CanvasRenderingContext2D) {
-    const B = this.clock;
-    const flyW = 79 * this.flySize;
-    const flyH = flyW * (246 / 240);
-    const scaleX = flyW / 240;
-    const scaleY = flyH / 246;
-
-    if (this.fly.alpha > 0.01) {
-      ctx.save();
-      ctx.globalAlpha = this.fly.alpha;
-
-      // Hover height y = 1 - landed, bob of sin(6B) * 1.2 * y
-      const yHover = 1 - this.fly.landed;
-      const bob = Math.sin(6 * B) * 1.2 * yHover;
-
-      ctx.translate(this.fly.x, this.fly.y + bob);
-      ctx.rotate(this.fly.heading);
-
-      // Fly shadow: rgba(0,0,0, 0.2 + 0.18*landed), blur 3 + 9y, offset (3 + 14y, 5 + 26y)
-      ctx.shadowColor = `rgba(0, 0, 0, ${(0.2 + 0.18 * this.fly.landed).toFixed(3)})`;
-      ctx.shadowBlur = 3 + 9 * yHover;
-      ctx.shadowOffsetX = 3 + 14 * yHover;
-      ctx.shadowOffsetY = 5 + 26 * yHover;
-
-      // Draw fly body centered
-      ctx.drawImage(this.flyBodyCanvas, -flyW * 0.5, -flyH * 0.5, flyW, flyH);
-
-      // Reset shadow for rapid ghost wings
-      ctx.shadowColor = 'transparent';
-
-      // Wing hinge at (388, 405) in 920x945 space
-      const lHingeX = (388 / 920 - 0.5) * flyW;
-      const lHingeY = (405 / 945 - 0.5) * flyH;
-      const rHingeX = -lHingeX;
-      const rHingeY = lHingeY;
-
-      if (this.fly.landed > 0.85 && this.fly.caught <= 0) {
-        // Landed: wings fold neatly
-        ctx.drawImage(this.flyLeftWingCanvas, -flyW * 0.5, -flyH * 0.5, flyW, flyH);
-        ctx.drawImage(this.flyRightWingCanvas, -flyW * 0.5, -flyH * 0.5, flyW, flyH);
-      } else {
-        // Flying: four ghost copies at 34 Hz (46 Hz when caught)
-        const freq = this.fly.caught > 0 ? 46 : 34;
-        for (let g = 0; g < 4; g++) {
-          const q = Math.sin((B * freq + g * 0.21) * Math.PI * 2);
-          ctx.save();
-          ctx.globalAlpha = this.fly.alpha * (g === 0 ? 0.55 : 0.24);
-
-          // Left wing
-          ctx.save();
-          ctx.translate(lHingeX, lHingeY);
-          ctx.rotate(0.9 * q * 0.45);
-          ctx.scale(1, 1 - 0.25 * Math.abs(q));
-          ctx.translate(-lHingeX, -lHingeY);
-          ctx.drawImage(this.flyLeftWingCanvas, -flyW * 0.5, -flyH * 0.5, flyW, flyH);
-          ctx.restore();
-
-          // Right wing
-          ctx.save();
-          ctx.translate(rHingeX, rHingeY);
-          ctx.rotate(-0.9 * q * 0.45);
-          ctx.scale(1, 1 - 0.25 * Math.abs(q));
-          ctx.translate(-rHingeX, -rHingeY);
-          ctx.drawImage(this.flyRightWingCanvas, -flyW * 0.5, -flyH * 0.5, flyW, flyH);
-          ctx.restore();
-
-          ctx.restore();
-        }
-      }
-
-      ctx.restore();
-    }
-
-    // Silk Cocoon when caught or fading out (Section 10: 7 ellipse strokes of radius 30*flySize + 70 short fibres)
-    const cocoonAlpha = this.fly.caught > 0 ? 1 : this.fly.cocoonFade;
-    if (cocoonAlpha > 0.01) {
-      const prog = this.fly.caught > 0 ? this.fly.cocoonProgress : 1;
-      const cx = this.fly.caught > 0 ? this.fly.x : this.fly.cocoonX;
-      const cy = this.fly.caught > 0 ? this.fly.y : this.fly.cocoonY;
-      const r = 30 * this.flySize;
-
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.rotate(this.fly.cocoonHeading);
-      ctx.globalAlpha = cocoonAlpha;
-
-      // Translucent Liquid Honey Glaze Droplets encapsulating the caught target
-      const dropCount = 7;
-      for (let i = 0; i < dropCount; i++) {
-        const dropProg = Math.max(0, Math.min(1, prog * dropCount - i));
-        if (dropProg <= 0) continue;
-        const ang = i * ((Math.PI * 2) / dropCount);
-        const dist = (i === 0 ? 0 : r * 0.48) * dropProg;
-        const sz = (i === 0 ? r * 2.2 : r * 1.45) * dropProg;
-        ctx.drawImage(
-          this.dewSprite,
-          Math.cos(ang) * dist - sz * 0.5,
-          Math.sin(ang) * dist - sz * 0.5,
-          sz,
-          sz
-        );
-      }
-
-      ctx.restore();
-    }
+  private drawFlyAndCocoon(_ctx: CanvasRenderingContext2D) {
+    // Cursor-following secondary bee/drone disabled per user request
   }
 }

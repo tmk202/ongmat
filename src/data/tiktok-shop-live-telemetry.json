@@ -1,0 +1,29 @@
+{
+  "id": "book",
+  "slug": "tiktok-shop-live-telemetry",
+  "platformName": "TikTok Shop",
+  "title": "TikTok Shop × Lazada Index Vault & Creator Telemetry",
+  "subtitle": "Short-Video Commerce, Creator Affiliate & Brand Mall Ledger",
+  "catalogCode": "OBJ-03 · TIKTOK SHOP + LAZADA VAULT",
+  "category": "Longitudinal Cohort, Creator Affiliate ROI & Repeat Retention",
+  "seoTitle": "TikTok Shop Live & Creator Affiliate ROI Dataset | ecommarketdata",
+  "seoDescription": "Sub-minute TikTok Shop livestream GMV curves, mid-tier creator affiliate ROI (5.4x), and 90-day repeat purchase cohorts across Southeast Asia and US.",
+  "keywords": ["TikTok Shop live data", "creator affiliate ROI", "social commerce telemetry", "Lazada LazMall dataset", "ecommarketdata"],
+  "lastModified": "2026-11-05",
+  "temporalCoverage": "2022-01-01/2026-11-05",
+  "rowCount": "19,600,000",
+  "sampleCsvFilename": "ecommarketdata_tiktok_shop_live_telemetry.csv",
+  "summary": "Chromatic 3D acoustic-commerce vault benchmarking TikTok Shop livestream room conversion velocity, sound-to-SKU viral velocity, and Lazada LazMall flagship store cohorts.",
+  "metrics": [
+    { "label": "Cross-Border GMV Share", "value": "42.6%", "delta": "+1,420 bps YoY shift" },
+    { "label": "90-Day Repeat Purchase", "value": "37.9%", "delta": "Curated & flagship SKUs" },
+    { "label": "Creator Affiliate ROI", "value": "5.4x", "delta": "Mid-tier 50k–250k creators" }
+  ],
+  "benchmarks": [
+    { "platform": "TikTok Shop Video Feed", "share": "34.0%", "yoyGrowth": "+69.4%", "avgBasket": "$21.50", "conversionRate": "5.1%" },
+    { "platform": "Lazada LazMall SEA", "share": "27.5%", "yoyGrowth": "+18.1%", "avgBasket": "$36.80", "conversionRate": "4.8%" },
+    { "platform": "Etsy Global Marketplace", "share": "19.0%", "yoyGrowth": "+22.0%", "avgBasket": "$48.30", "conversionRate": "4.6%" },
+    { "platform": "Amazon Handmade & D2C", "share": "19.5%", "yoyGrowth": "+16.2%", "avgBasket": "$59.20", "conversionRate": "5.9%" }
+  ],
+  "insightNote": "Merchants combining search-intent keywords with short-video product teardowns exhibit a 28% lower return rate than flash-voucher impulse buyers."
+}

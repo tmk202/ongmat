@@ -1,0 +1,29 @@
+{
+  "id": "tshirt",
+  "slug": "etsy-lazada-omni-hub",
+  "platformName": "Shopify",
+  "title": "Shopify × Omni-Channel E-Com Command Hub · (888) 799-2021",
+  "subtitle": "Shopee · Amazon · TikTok Shop · Shopify Live Warehouse Sync",
+  "catalogCode": "OBJ-04 · SHOPIFY + OMNI-CHANNEL COMMAND RIG",
+  "category": "Custom Data Pipelines · Snowflake / BigQuery Firehose",
+  "seoTitle": "Shopify D2C Checkout & Omni-Channel Warehouse Sync | ecommarketdata",
+  "seoDescription": "Real-time Snowflake, BigQuery, and Parquet firehose syncing Shopify Plus D2C checkout velocity, Shopee, Amazon, and TikTok Shop SKU telemetry with 60-month backfill.",
+  "keywords": ["Shopify Plus dataset", "e-commerce Snowflake firehose", "BigQuery retail dataset", "omni-channel SKU sync", "ecommarketdata"],
+  "lastModified": "2026-11-05",
+  "temporalCoverage": "2021-01-01/2026-11-05",
+  "rowCount": "68,400,000",
+  "sampleCsvFilename": "ecommarketdata_shopify_omni_command_hub.csv",
+  "summary": "Docked at the base of the cabinet with dual gold-plated telemetry antennas and custom Shopee, Amazon, TikTok Shop, and Shopify Plus cores. Connect ecommarketdata directly to your BI warehouse or call (888) 799-2021.",
+  "metrics": [
+    { "label": "Warehouse Sync Latency", "value": "Real-Time", "delta": "Snowflake · BigQuery · S3" },
+    { "label": "Historical Backfill", "value": "60 Months", "delta": "Granular daily SKU series" },
+    { "label": "Enterprise SLA Uptime", "value": "99.98%", "delta": "Dedicated data engineering" }
+  ],
+  "benchmarks": [
+    { "platform": "Shopify Plus D2C Firehose", "share": "Checkout & AOV", "yoyGrowth": "+31.8% YoY", "avgBasket": "$84.20", "conversionRate": "99.99%" },
+    { "platform": "Shopee + Lazada Firehose", "share": "JSON / Parquet", "yoyGrowth": "10M req/day", "avgBasket": "< 45ms p95", "conversionRate": "99.99%" },
+    { "platform": "Amazon Buy-Box & FBA", "share": "MAP & Sellers", "yoyGrowth": "24/7 Crawl", "avgBasket": "Auto-Alert", "conversionRate": "98.7%" },
+    { "platform": "TikTok Shop Live Stream", "share": "Room Telemetry", "yoyGrowth": "Sub-Minute", "avgBasket": "GMV Curve", "conversionRate": "99.5%" }
+  ],
+  "insightNote": "Over 240 global consumer brands, private equity funds, and marketplace aggregators rely on ecommarketdata before launching new product lines."
+}
