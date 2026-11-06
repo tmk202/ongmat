@@ -728,8 +728,8 @@ export class SpiderCabinetEngine {
 
   private updateSize() {
     this.dpr = Math.min(2, window.devicePixelRatio || 1);
-    this.W = window.innerWidth;
-    this.H = window.innerHeight;
+    this.W = this.canvas.clientWidth || window.innerWidth;
+    this.H = this.canvas.clientHeight || window.innerHeight;
     this.canvas.width = Math.round(this.W * this.dpr);
     this.canvas.height = Math.round(this.H * this.dpr);
 
@@ -801,12 +801,19 @@ export class SpiderCabinetEngine {
     const existingMap = new Map<HTMLElement, WobbleItem>();
     for (const item of this.wobbleItems) existingMap.set(item.el, item);
     const nextWobble: WobbleItem[] = [];
+    const cr = this.canvas.getBoundingClientRect();
 
     for (const el of els) {
       const style = window.getComputedStyle(el);
       if (style.display === 'none' || style.visibility === 'hidden') continue;
-      const rect = el.getBoundingClientRect();
-      if (rect.width < 2 || rect.height < 2) continue;
+      const rawRect = el.getBoundingClientRect();
+      if (rawRect.width < 2 || rawRect.height < 2) continue;
+      const rect = new DOMRect(
+        rawRect.left - cr.left,
+        rawRect.top - cr.top,
+        rawRect.width,
+        rawRect.height
+      );
 
       if (el.classList.contains('cabinet-obj')) {
         const prev = existingMap.get(el);
@@ -1449,10 +1456,19 @@ export class SpiderCabinetEngine {
   }
 
   private pickRandomHivePoint(): Vec2 {
+    const cr = this.canvas.getBoundingClientRect();
     // 1. Check central 'ecommarketdata' wordmark (.frame .found) and land on its OUTER EDGE (mép ngoài)
     const foundEl = document.querySelector<HTMLElement>('.frame .found');
     if (foundEl) {
-      const r = foundEl.getBoundingClientRect();
+      const rawR = foundEl.getBoundingClientRect();
+      const r = {
+        left: rawR.left - cr.left,
+        top: rawR.top - cr.top,
+        right: rawR.right - cr.left,
+        bottom: rawR.bottom - cr.top,
+        width: rawR.width,
+        height: rawR.height,
+      };
       if (r.width > 40 && r.height > 20) {
         const edgeRoll = Math.random();
         let px: number;
@@ -1484,7 +1500,13 @@ export class SpiderCabinetEngine {
     // 2. If .tech-hive-core is present, pick only from the OUTER RING of hexagonal cells
     const hiveEl = document.querySelector<HTMLElement>('.tech-hive-core');
     if (hiveEl) {
-      const r = hiveEl.getBoundingClientRect();
+      const rawR = hiveEl.getBoundingClientRect();
+      const r = {
+        left: rawR.left - cr.left,
+        top: rawR.top - cr.top,
+        width: rawR.width,
+        height: rawR.height,
+      };
       if (r.width > 80 && r.height > 40) {
         const outerRingCells: [number, number][] = [
           [516, 89],

@@ -23,6 +23,12 @@ export interface CabinetAssets {
   playUrl: string;
   nextUrl: string;
   repeatUrl: string;
+  lazadaUrl: string;
+  etsyUrl: string;
+  modScraperUrl: string;
+  modSyncUrl: string;
+  modAiUrl: string;
+  modApiUrl: string;
 }
 
 function createCanvas(w: number, h: number): [HTMLCanvasElement, CanvasRenderingContext2D] {
@@ -1162,6 +1168,254 @@ function generateUiIcon(
   return c.toDataURL('image/png');
 }
 
+function generateLazadaDataUrl(): string {
+  // 20-layer 3D Extruded Lazada Heart-Box Prism Sculpture (280x260 viewBox)
+  const heartBoxPath =
+    'M 0 -22 L -48 -52 L -68 -24 L -68 26 L 0 68 L 68 26 L 68 -24 L 48 -52 Z';
+  const leftWing = 'M 0 -22 L -48 -52 L -68 -24 L 0 18 Z';
+  const rightWing = 'M 0 -22 L 48 -52 L 68 -24 L 0 18 Z';
+
+  let extrude = '';
+  const steps = 20;
+  for (let i = steps; i >= 1; i--) {
+    const t = i / steps;
+    const ox = (i * 0.68).toFixed(2);
+    const oy = (i * 0.88).toFixed(2);
+    const r = Math.round(12 + (1 - t) * 28);
+    const g = Math.round(18 + (1 - t) * 22);
+    const b = Math.round(95 + (1 - t) * 90);
+    extrude += `<path d="${heartBoxPath}" transform="translate(${ox}, ${oy})" fill="rgb(${r},${g},${b})" stroke="rgb(${r},${g},${b})" stroke-width="6" stroke-linejoin="round" />`;
+  }
+
+  const svg = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 260" width="280" height="260" shape-rendering="geometricPrecision">
+  <defs>
+    <linearGradient id="lazBody" x1="-68" y1="-52" x2="68" y2="68" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ff7a00" />
+      <stop offset="48%" stop-color="#f5227f" />
+      <stop offset="100%" stop-color="#0f146d" />
+    </linearGradient>
+    <linearGradient id="lazLeft" x1="-68" y1="-52" x2="0" y2="18" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffb347" />
+      <stop offset="55%" stop-color="#ff5e00" />
+      <stop offset="100%" stop-color="#e01e5a" />
+    </linearGradient>
+    <linearGradient id="lazRight" x1="0" y1="-52" x2="68" y2="18" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ff4d79" />
+      <stop offset="100%" stop-color="#1129e2" />
+    </linearGradient>
+  </defs>
+  <g transform="translate(136, 126) scale(1.12) rotate(-2)">
+    <path d="${heartBoxPath}" transform="translate(18, 25)" fill="rgba(10, 24, 110, 0.16)" stroke="rgba(10, 24, 110, 0.16)" stroke-width="10" stroke-linejoin="round" />
+    ${extrude}
+    <path d="${heartBoxPath}" fill="url(#lazBody)" stroke="#0f146d" stroke-width="4" stroke-linejoin="round" />
+    <path d="${leftWing}" fill="url(#lazLeft)" />
+    <path d="${rightWing}" fill="url(#lazRight)" />
+    <path d="M 0 18 L 0 68" stroke="rgba(255,255,255,0.65)" stroke-width="3.5" stroke-linecap="round" />
+    <path d="M -46 -49 L 0 -20 L 46 -49" fill="none" stroke="rgba(255,255,255,0.82)" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+</svg>`;
+  return svgToDataUrl(svg);
+}
+
+function generateEtsyDataUrl(): string {
+  // 20-layer 3D Extruded Terracotta Serif 'E' Sculpture (280x260 viewBox)
+  const ePath =
+    'M -52 -62 L 48 -62 L 48 -32 L 32 -32 L 28 -44 L -16 -44 L -16 -8 L 22 -8 L 22 8 L -16 8 L -16 44 L 32 44 L 38 28 L 52 28 L 48 62 L -52 62 L -52 46 L -38 44 L -38 -44 L -52 -46 Z';
+
+  let extrude = '';
+  const steps = 20;
+  for (let i = steps; i >= 1; i--) {
+    const t = i / steps;
+    const ox = (i * 0.68).toFixed(2);
+    const oy = (i * 0.88).toFixed(2);
+    const r = Math.round(135 + (1 - t) * 85);
+    const g = Math.round(38 + (1 - t) * 42);
+    const b = Math.round(12 + (1 - t) * 18);
+    extrude += `<path d="${ePath}" transform="translate(${ox}, ${oy})" fill="rgb(${r},${g},${b})" stroke="rgb(${r},${g},${b})" stroke-width="3" stroke-linejoin="round" />`;
+  }
+
+  const svg = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 260" width="280" height="260" shape-rendering="geometricPrecision">
+  <defs>
+    <linearGradient id="etsyFace" x1="-52" y1="-62" x2="52" y2="62" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ff8a4c" />
+      <stop offset="50%" stop-color="#f1641e" />
+      <stop offset="100%" stop-color="#c2410c" />
+    </linearGradient>
+  </defs>
+  <g transform="translate(136, 128) scale(1.1) rotate(2)">
+    <path d="${ePath}" transform="translate(18, 24)" fill="rgba(10, 24, 110, 0.16)" />
+    ${extrude}
+    <path d="${ePath}" fill="url(#etsyFace)" stroke="#9a3412" stroke-width="3" stroke-linejoin="round" />
+    <path d="M -46 -58 L 42 -58" stroke="rgba(255,255,255,0.78)" stroke-width="3.2" stroke-linecap="round" />
+  </g>
+</svg>`;
+  return svgToDataUrl(svg);
+}
+
+function generateModScraperUrl(): string {
+  // 3D Extruded Cyber-Harvester Claw & Golden Nectar Core (280x260 viewBox)
+  const hexCore = 'M 0 -36 L 31 -18 L 31 18 L 0 36 L -31 18 L -31 -18 Z';
+  const leftClaw = 'M -28 -58 C -68 -42, -74 18, -32 54';
+  const rightClaw = 'M 28 -58 C 68 -42, 74 18, 32 54';
+
+  let extrudeClaw = '';
+  let extrudeHex = '';
+  for (let i = 18; i >= 1; i--) {
+    const ox = (i * 0.65).toFixed(2);
+    const oy = (i * 0.85).toFixed(2);
+    const cCol = i > 9 ? '#071252' : '#0d1f8a';
+    const hCol = i > 9 ? '#92400e' : '#d97706';
+    extrudeClaw += `<g transform="translate(${ox}, ${oy})" fill="none" stroke="${cCol}" stroke-width="18" stroke-linecap="round">
+      <path d="${leftClaw}" />
+      <path d="${rightClaw}" />
+    </g>`;
+    extrudeHex += `<path d="${hexCore}" transform="translate(${ox}, ${oy})" fill="${hCol}" stroke="${hCol}" stroke-width="4" stroke-linejoin="round" />`;
+  }
+
+  const svg = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 260" width="280" height="260" shape-rendering="geometricPrecision">
+  <defs>
+    <linearGradient id="clawGrad" x1="-70" y1="-60" x2="70" y2="60" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="45%" stop-color="#1129e2" />
+      <stop offset="100%" stop-color="#09157a" />
+    </linearGradient>
+    <linearGradient id="goldHex" x1="-32" y1="-36" x2="32" y2="36" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="45%" stop-color="#fbbf24" />
+      <stop offset="100%" stop-color="#d97706" />
+    </linearGradient>
+  </defs>
+  <g transform="translate(136, 126) scale(1.12) rotate(-2)">
+    <path d="${hexCore}" transform="translate(18, 24)" fill="rgba(10, 24, 110, 0.16)" />
+    ${extrudeClaw}
+    <path d="${leftClaw}" fill="none" stroke="url(#clawGrad)" stroke-width="18" stroke-linecap="round" />
+    <path d="${rightClaw}" fill="none" stroke="url(#clawGrad)" stroke-width="18" stroke-linecap="round" />
+    <path d="${leftClaw}" transform="translate(-2,-2)" fill="none" stroke="rgba(255,255,255,0.65)" stroke-width="3.5" stroke-linecap="round" />
+    ${extrudeHex}
+    <path d="${hexCore}" fill="url(#goldHex)" stroke="#ffffff" stroke-width="3" stroke-linejoin="round" />
+    <circle cx="-8" cy="-10" r="6" fill="rgba(255,255,255,0.85)" />
+  </g>
+</svg>`;
+  return svgToDataUrl(svg);
+}
+
+function generateModSyncUrl(): string {
+  // 3D Extruded Interlocking Golden & Cobalt Planetary Sync Rings (280x260 viewBox)
+  const ring1 = 'M -52 -12 A 42 42 0 1 1 32 -12 A 42 42 0 1 1 -52 -12';
+  const ring2 = 'M -32 14 A 42 42 0 1 1 52 14 A 42 42 0 1 1 -32 14';
+
+  let extrude1 = '';
+  let extrude2 = '';
+  for (let i = 16; i >= 1; i--) {
+    const ox = (i * 0.65).toFixed(2);
+    const oy = (i * 0.85).toFixed(2);
+    extrude1 += `<path d="${ring1}" transform="translate(${ox}, ${oy})" fill="none" stroke="${i > 8 ? '#071252' : '#0e2299'}" stroke-width="20" />`;
+    extrude2 += `<path d="${ring2}" transform="translate(${ox}, ${oy})" fill="none" stroke="${i > 8 ? '#92400e' : '#b45309'}" stroke-width="20" />`;
+  }
+
+  const svg = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 260" width="280" height="260" shape-rendering="geometricPrecision">
+  <defs>
+    <linearGradient id="syncBlue" x1="-55" y1="-55" x2="35" y2="35" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#60a5fa" />
+      <stop offset="50%" stop-color="#1129e2" />
+      <stop offset="100%" stop-color="#09157a" />
+    </linearGradient>
+    <linearGradient id="syncGold" x1="-35" y1="-30" x2="55" y2="55" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#fde047" />
+      <stop offset="50%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#b45309" />
+    </linearGradient>
+  </defs>
+  <g transform="translate(136, 126) scale(1.1) rotate(2)">
+    ${extrude1}
+    <path d="${ring1}" fill="none" stroke="url(#syncBlue)" stroke-width="20" />
+    <path d="${ring1}" transform="translate(-2,-2)" fill="none" stroke="rgba(255,255,255,0.65)" stroke-width="3.5" />
+    ${extrude2}
+    <path d="${ring2}" fill="none" stroke="url(#syncGold)" stroke-width="20" />
+    <path d="${ring2}" transform="translate(-2,-2)" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="3.5" />
+  </g>
+</svg>`;
+  return svgToDataUrl(svg);
+}
+
+function generateModAiUrl(): string {
+  // 3D Extruded Isometric Honeycomb Neural Cube Sculpture (280x260 viewBox)
+  const outerHex = 'M 0 -64 L 56 -32 L 56 32 L 0 64 L -56 32 L -56 -32 Z';
+  const innerCore = 'M 0 -28 L 24 -14 L 24 14 L 0 28 L -24 14 L -24 -14 Z';
+
+  let extrude = '';
+  for (let i = 18; i >= 1; i--) {
+    const ox = (i * 0.68).toFixed(2);
+    const oy = (i * 0.88).toFixed(2);
+    extrude += `<path d="${outerHex}" transform="translate(${ox}, ${oy})" fill="${i > 9 ? '#071252' : '#0f239c'}" stroke="#071252" stroke-width="4" stroke-linejoin="round" />`;
+  }
+
+  const svg = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 260" width="280" height="260" shape-rendering="geometricPrecision">
+  <defs>
+    <linearGradient id="aiCube" x1="-56" y1="-64" x2="56" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="50%" stop-color="#1129e2" />
+      <stop offset="100%" stop-color="#081266" />
+    </linearGradient>
+    <linearGradient id="aiNectar" x1="-24" y1="-28" x2="24" y2="28" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="35%" stop-color="#fde047" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+  </defs>
+  <g transform="translate(136, 126) scale(1.1) rotate(-1.5)">
+    <path d="${outerHex}" transform="translate(18, 24)" fill="rgba(10, 24, 110, 0.16)" />
+    ${extrude}
+    <path d="${outerHex}" fill="url(#aiCube)" stroke="#60a5fa" stroke-width="3.5" stroke-linejoin="round" />
+    <path d="M 0 -64 L 0 0 M 56 -32 L 0 0 M -56 -32 L 0 0 M 0 64 L 0 0" stroke="rgba(255,255,255,0.35)" stroke-width="2.5" />
+    <path d="${innerCore}" transform="translate(5, 7)" fill="#78350f" />
+    <path d="${innerCore}" fill="url(#aiNectar)" stroke="#ffffff" stroke-width="2.5" stroke-linejoin="round" />
+    <circle cx="-6" cy="-6" r="5" fill="#ffffff" />
+  </g>
+</svg>`;
+  return svgToDataUrl(svg);
+}
+
+function generateModApiUrl(): string {
+  // 3D Extruded Golden Nectar Droplet & Pressurized Cobalt Torus Sculpture (280x260 viewBox)
+  const dropPath = 'M 0 -64 C 24 -26, 46 2, 46 28 A 46 46 0 1 1 -46 28 C -46 2, -24 -26, 0 -64 Z';
+
+  let extrude = '';
+  for (let i = 18; i >= 1; i--) {
+    const ox = (i * 0.68).toFixed(2);
+    const oy = (i * 0.88).toFixed(2);
+    extrude += `<path d="${dropPath}" transform="translate(${ox}, ${oy})" fill="${i > 9 ? '#92400e' : '#b45309'}" />`;
+  }
+
+  const svg = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 260" width="280" height="260" shape-rendering="geometricPrecision">
+  <defs>
+    <linearGradient id="nectarDrop" x1="-46" y1="-64" x2="46" y2="74" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#fef9c3" />
+      <stop offset="35%" stop-color="#fbbf24" />
+      <stop offset="75%" stop-color="#f59e0b" />
+      <stop offset="100%" stop-color="#b45309" />
+    </linearGradient>
+  </defs>
+  <g transform="translate(136, 122) scale(1.08) rotate(2)">
+    <path d="${dropPath}" transform="translate(18, 25)" fill="rgba(10, 24, 110, 0.16)" />
+    <ellipse cx="4" cy="42" rx="68" ry="22" fill="none" stroke="#09157a" stroke-width="12" />
+    <ellipse cx="0" cy="36" rx="68" ry="22" fill="none" stroke="#1129e2" stroke-width="11" />
+    <ellipse cx="0" cy="34" rx="68" ry="22" fill="none" stroke="#60a5fa" stroke-width="3" />
+    ${extrude}
+    <path d="${dropPath}" fill="url(#nectarDrop)" stroke="#fef08a" stroke-width="2.5" />
+    <ellipse cx="-14" cy="16" rx="10" ry="22" transform="rotate(-18 -14 16)" fill="rgba(255,255,255,0.78)" />
+    <circle cx="-18" cy="-8" r="5" fill="#ffffff" />
+  </g>
+</svg>`;
+  return svgToDataUrl(svg);
+}
+
 let cachedAssets: CabinetAssets | null = null;
 
 export function getCabinetAssets(): CabinetAssets {
@@ -1188,6 +1442,12 @@ export function getCabinetAssets(): CabinetAssets {
     playUrl: generateUiIcon('play', 48),
     nextUrl: generateUiIcon('next', 24),
     repeatUrl: generateUiIcon('repeat', 16),
+    lazadaUrl: generateLazadaDataUrl(),
+    etsyUrl: generateEtsyDataUrl(),
+    modScraperUrl: generateModScraperUrl(),
+    modSyncUrl: generateModSyncUrl(),
+    modAiUrl: generateModAiUrl(),
+    modApiUrl: generateModApiUrl(),
   };
   return cachedAssets;
 }
