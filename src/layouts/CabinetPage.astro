@@ -131,5 +131,26 @@ const isActive = (href: string) =>
         </nav>
       </div>
     </footer>
+
+    <script>
+      const revealTargets = document.querySelectorAll('.section > .container > *');
+      if ('IntersectionObserver' in window && revealTargets.length) {
+        const io = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              if (entry.isIntersecting) {
+                entry.target.classList.add('in-view');
+                io.unobserve(entry.target);
+              }
+            }
+          },
+          { rootMargin: '0px 0px -8% 0px', threshold: 0.08 }
+        );
+        revealTargets.forEach((el) => {
+          el.classList.add('reveal');
+          io.observe(el);
+        });
+      }
+    </script>
   </body>
 </html>

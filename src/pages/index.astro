@@ -140,161 +140,55 @@ const jsonLd = JSON.stringify(buildHomeJsonLd());
         <section class="landing-section hiw8-section" id="telemetry" aria-labelledby="hiw8-heading">
           <div class="hiw8-container">
             <div class="hiw8-header">
-              <h2 id="hiw8-heading" class="hiw8-heading">How We Work</h2>
+              <h2 id="hiw8-heading" class="hiw8-heading">How we work</h2>
               <p class="hiw8-subheading">
-                Scope your target marketplaces, validate fields once, and let scheduled syncs keep every table in your warehouse fresh.
+                Tell us the platform, the business use case, and the data fields you need — any marketplace, any industry, any spec. We take it all, then design, build, and ship it as a service.
               </p>
+              <span class="hiw8-flow">You request &rarr; We engineer &rarr; You pull</span>
+              <a href="#contact" class="hiw5-cta">Get Started</a>
+              <p class="hiw5-note">Need a custom dataset or feed? <a href="#contact">Contact us</a>.</p>
             </div>
 
             <ol class="hiw8-grid">
-              <!-- Step 1 -->
               <li class="hiw8-step">
-                <div class="hiw8-visual-card" aria-hidden="true">
-                  <div class="hiw8-visual-stack">
-                    <div class="hiw8-source-item">
-                      <span class="hiw8-source-code">SP</span>
-                      <span class="hiw8-source-main">
-                        <span class="hiw8-source-name">Shopee &amp; Lazada</span>
-                        <span class="hiw8-source-meta"> · Production</span>
-                      </span>
-                      <span class="hiw8-source-pill">
-                        <svg class="hiw8-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                          <path d="M20 6 9 17l-5-5" />
-                        </svg>
-                        Linked
-                      </span>
-                    </div>
-
-                    <div class="hiw8-source-item">
-                      <span class="hiw8-source-code">TK</span>
-                      <span class="hiw8-source-main">
-                        <span class="hiw8-source-name">TikTok Shop</span>
-                        <span class="hiw8-source-meta"> · Live</span>
-                      </span>
-                      <span class="hiw8-source-pill">
-                        <svg class="hiw8-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                          <path d="M20 6 9 17l-5-5" />
-                        </svg>
-                        Linked
-                      </span>
-                    </div>
-
-                    <div class="hiw8-source-item">
-                      <span class="hiw8-source-code">WH</span>
-                      <span class="hiw8-source-main">
-                        <span class="hiw8-source-name">Warehouse</span>
-                        <span class="hiw8-source-meta"> · Destination</span>
-                      </span>
-                      <span class="hiw8-source-pill">
-                        <svg class="hiw8-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                          <path d="M20 6 9 17l-5-5" />
-                        </svg>
-                        Linked
-                      </span>
-                    </div>
-                  </div>
+                <span class="hiw8-step-badge">1</span>
+                <div class="hiw8-step-body">
+                  <h3 class="hiw8-step-title">You request</h3>
+                  <p class="hiw8-step-copy">
+                    Name the platform, product category, or niche — any marketplace, any industry, any fields. Scope, history, refresh cadence, and format are yours to define.
+                  </p>
                 </div>
-
-                <div class="hiw8-connector">
-                  <div class="hiw8-line-track hiw8-span-first" aria-hidden="true"></div>
-                  <div class="hiw8-line-draw hiw8-span-first hiw8-delay-0" aria-hidden="true"></div>
-                  <span class="hiw8-step-badge">1</span>
-                </div>
-
-                <h3 class="hiw8-step-title">Connect your sources</h3>
-                <p class="hiw8-step-copy">
-                  Select your target marketplaces, categories, and historical depth. We manage extraction and anti-rotations so feeds never silently expire.
-                </p>
               </li>
 
-              <!-- Step 2 -->
               <li class="hiw8-step">
-                <div class="hiw8-visual-card" aria-hidden="true">
-                  <div class="hiw8-visual-stack">
-                    <div class="hiw8-map-row">
-                      <span class="hiw8-map-token">sku_id</span>
-                      <svg class="hiw8-arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M5 12h14" />
-                        <path d="m12 5 7 7-7 7" />
-                      </svg>
-                      <span class="hiw8-map-token">product_id</span>
-                    </div>
-
-                    <div class="hiw8-map-row">
-                      <span class="hiw8-map-token">sold_30d</span>
-                      <svg class="hiw8-arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M5 12h14" />
-                        <path d="m12 5 7 7-7 7" />
-                      </svg>
-                      <span class="hiw8-map-token">monthly_units</span>
-                    </div>
-
-                    <div class="hiw8-map-row">
-                      <span class="hiw8-map-token">gmv_raw</span>
-                      <svg class="hiw8-arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M5 12h14" />
-                        <path d="m12 5 7 7-7 7" />
-                      </svg>
-                      <span class="hiw8-map-token">amount_usd</span>
-                    </div>
-                  </div>
+                <span class="hiw8-step-badge">2</span>
+                <div class="hiw8-step-body">
+                  <h3 class="hiw8-step-title">We analyze the logic</h3>
+                  <p class="hiw8-step-copy">
+                    We break down the business rules, model the entities, and design the extraction algorithm that turns raw marketplace signals into clean, typed data. Typical timeline: <strong>2–5 business days</strong>.
+                  </p>
+                  <p class="hiw8-step-note">Actual analysis time depends on the complexity of the business use case.</p>
                 </div>
-
-                <div class="hiw8-connector">
-                  <div class="hiw8-line-track hiw8-span-mid" aria-hidden="true"></div>
-                  <div class="hiw8-line-draw hiw8-span-mid hiw8-delay-1" aria-hidden="true"></div>
-                  <span class="hiw8-step-badge">2</span>
-                </div>
-
-                <h3 class="hiw8-step-title">Map fields once</h3>
-                <p class="hiw8-step-copy">
-                  Validate a free sample dataset and pair fields side by side with strict type checks and sensible defaults. Every future sync honors the mapping.
-                </p>
               </li>
 
-              <!-- Step 3 -->
               <li class="hiw8-step">
-                <div class="hiw8-visual-card" aria-hidden="true">
-                  <div class="hiw8-sync-box">
-                    <div class="hiw8-sync-top">
-                      <span class="hiw8-sync-label">Nightly sync</span>
-                      <span class="hiw8-live-pill">
-                        <span class="hiw8-live-dot"></span>
-                        Live
-                      </span>
-                    </div>
-
-                    <div class="hiw8-progress-bg">
-                      <div class="hiw8-progress-bar"></div>
-                    </div>
-
-                    <dl class="hiw8-metrics">
-                      <div class="hiw8-metric-row">
-                        <dt>Records moved</dt>
-                        <dd>1,420,318</dd>
-                      </div>
-                      <div class="hiw8-metric-row">
-                        <dt>Duration</dt>
-                        <dd>54 s</dd>
-                      </div>
-                      <div class="hiw8-metric-row">
-                        <dt>Next run</dt>
-                        <dd>02:00 UTC</dd>
-                      </div>
-                    </dl>
-                  </div>
+                <span class="hiw8-step-badge">3</span>
+                <div class="hiw8-step-body">
+                  <h3 class="hiw8-step-title">We build &amp; ship the service</h3>
+                  <p class="hiw8-step-copy">
+                    Pipelines are auto-generated and hardened, then exposed as a production-ready API — with retries, deduplication, and schema guarantees included.
+                  </p>
                 </div>
+              </li>
 
-                <div class="hiw8-connector">
-                  <div class="hiw8-line-track hiw8-span-last" aria-hidden="true"></div>
-                  <div class="hiw8-line-draw hiw8-span-last hiw8-delay-2" aria-hidden="true"></div>
-                  <span class="hiw8-step-badge">3</span>
+              <li class="hiw8-step">
+                <span class="hiw8-step-badge">4</span>
+                <div class="hiw8-step-body">
+                  <h3 class="hiw8-step-title">You pull on schedule</h3>
+                  <p class="hiw8-step-copy">
+                    Call the endpoint on your own cadence and receive fresh, schema-ready data every time — zero maintenance on your side.
+                  </p>
                 </div>
-
-                <h3 class="hiw8-step-title">Let the schedule run</h3>
-                <p class="hiw8-step-copy">
-                  Syncs run nightly or on demand, with retries, deduplication, and a full audit trail on every commerce record delivered to your stack.
-                </p>
               </li>
             </ol>
           </div>
@@ -374,29 +268,20 @@ const jsonLd = JSON.stringify(buildHomeJsonLd());
                 </div>
 
                 <div class="cta-field cta-field-full">
-                  <div class="cta-label-row">
-                    <span class="cta-label">Target Marketplaces</span>
-                    <span class="cta-counter-badge" id="lead-plat-counter">6 / 6 Active</span>
-                  </div>
-                  <div class="cta-plat-grid" id="platform-selectors">
-                    <button type="button" class="cta-plat-pill selected" data-platform="Shopee">
-                      Shopee
-                    </button>
-                    <button type="button" class="cta-plat-pill selected" data-platform="TikTok Shop">
-                      TikTok Shop
-                    </button>
-                    <button type="button" class="cta-plat-pill selected" data-platform="Amazon">
-                      Amazon
-                    </button>
-                    <button type="button" class="cta-plat-pill selected" data-platform="Shopify">
-                      Shopify
-                    </button>
-                    <button type="button" class="cta-plat-pill selected" data-platform="Lazada">
-                      Lazada
-                    </button>
-                    <button type="button" class="cta-plat-pill selected" data-platform="Etsy">
-                      Etsy
-                    </button>
+                  <label class="cta-label" for="lead-platforms">Target Marketplaces</label>
+                  <div class="cta-input-shell">
+                    <svg class="cta-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M2 12h20" />
+                      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                    </svg>
+                    <input
+                      id="lead-platforms"
+                      name="platforms"
+                      type="text"
+                      class="cta-input"
+                      placeholder="Type any platform — e.g. Shopee, TikTok Shop, Tokopedia, Amazon..."
+                    />
                   </div>
                 </div>
 
@@ -709,12 +594,11 @@ const jsonLd = JSON.stringify(buildHomeJsonLd());
         const warehouse = String(formData.get('warehouse') || 'Snowflake / BigQuery').trim();
         const message = String(formData.get('message') || '').trim();
 
-        const platforms: string[] = [];
-        platformBtns.forEach((b) => {
-          if (b.classList.contains('selected')) {
-            platforms.push(b.getAttribute('data-platform') || '');
-          }
-        });
+        const platformsInput = String(formData.get('platforms') || '').trim();
+        const platforms = platformsInput
+          .split(/[,;\n]/)
+          .map((p) => p.trim())
+          .filter(Boolean);
 
         if (!name || !email) {
           feedbackBanner.className = 'cta-feedback-banner show error';

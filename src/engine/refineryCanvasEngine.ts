@@ -601,7 +601,7 @@ export class RefineryCanvasEngine {
           this.beeColor = node.color;
         }
       }
-      this.hoveredNodeId = hitId;
+      this.hoveredNodeId = null;
 
       // Check proximity to visible right-side B2B destination ecosystem nodes
       const visibleB2B = this.getVisibleB2BNodes();
@@ -616,7 +616,7 @@ export class RefineryCanvasEngine {
           hitB2B = node.id;
         }
       }
-      this.hoveredB2BId = hitB2B;
+      this.hoveredB2BId = null;
     });
 
     this.canvas.addEventListener('pointerleave', () => {
@@ -717,18 +717,19 @@ export class RefineryCanvasEngine {
     return B2B_ECOSYSTEM_CONFIG.filter((p) => mobileIds.has(p.id));
   }
 
-  private getNodeRadius(node: PlatformNodeConfig): number {
+  private getNodeRadius(_node: PlatformNodeConfig): number {
     const scale = this.W < 620 ? 0.82 : this.W < 920 ? 0.92 : 1;
-    if (node.tier === 1) return 22.5 * scale;
-    if (node.tier === 2) return 18 * scale;
-    return 14.5 * scale;
+    return 20 * scale * this.getVisualScale();
   }
 
-  private getB2BNodeRadius(node: B2BNodeConfig): number {
+  private getB2BNodeRadius(_node: B2BNodeConfig): number {
     const scale = this.W < 620 ? 0.82 : this.W < 920 ? 0.92 : 1;
-    if (node.tier === 1) return 22.5 * scale;
-    if (node.tier === 2) return 18 * scale;
-    return 14.5 * scale;
+    return 20 * scale * this.getVisualScale();
+  }
+
+  private getVisualScale(): number {
+    const vs = this.H / 540;
+    return Math.max(1, Math.min(1.7, vs));
   }
 
   private getNodePosition(node: PlatformNodeConfig): { x: number; y: number } {
@@ -798,7 +799,7 @@ export class RefineryCanvasEngine {
     const hubX = this.W * cluster.hubRx;
     const hubY = this.H * cluster.hubRy;
     // Converge onto the western limb of the enlarged Glyph Orb
-    const orbRadius = 106;
+    const orbRadius = 112 * this.getVisualScale();
     const intakeYOffset = this.getClusterIntakeOffset(node.cluster) + (pos.y - centerY) * 0.08;
     const clampedOffset = Math.max(-orbRadius * 0.72, Math.min(orbRadius * 0.72, intakeYOffset));
     const intakeX = centerX - Math.sqrt(Math.max(100, orbRadius * orbRadius - clampedOffset * clampedOffset));
@@ -836,7 +837,7 @@ export class RefineryCanvasEngine {
     const hubY = this.H * hub.hubRy + subOffset * 5;
 
     // Radiate across the full eastern limb of the central Glyph Orb (mirroring the left-side intake arc)
-    const orbRadius = 106;
+    const orbRadius = 112 * this.getVisualScale();
     const exitYOffset =
       this.getB2BClusterExitOffset(node.cluster) * 0.65 +
       (pos.y - centerY) * 0.22 +
@@ -878,7 +879,7 @@ export class RefineryCanvasEngine {
     const u = (rayIdx + 0.5) / 16; // 0 .. 1 from top to bottom of the fan
     const x0 = this.W * (0.08 + (rayIdx % 3) * 0.07);
     const y0 = this.H * (0.06 + u * 0.88);
-    const orbRadius = 106;
+    const orbRadius = 112 * this.getVisualScale();
     const offset = (u - 0.5) * orbRadius * 1.35;
     const x1 = centerX - Math.sqrt(Math.max(100, orbRadius * orbRadius - offset * offset));
     const y1 = centerY + offset;
@@ -909,7 +910,7 @@ export class RefineryCanvasEngine {
     y1: number;
   } {
     const u = (rayIdx + 0.5) / 16; // 0 .. 1 from top to bottom of the right fan
-    const orbRadius = 106;
+    const orbRadius = 112 * this.getVisualScale();
     const offset = (u - 0.5) * orbRadius * 1.38;
     const x0 = centerX + Math.sqrt(Math.max(100, orbRadius * orbRadius - offset * offset));
     const y0 = centerY + offset;
@@ -1138,9 +1139,7 @@ export class RefineryCanvasEngine {
     // 3. Draw Left-Side Multi-Platform Ecosystem Nodes (Frameless / Borderless Levitating Logos, No Text Labels)
     for (const node of visiblePlatforms) {
       const pos = this.getNodePosition(node);
-      const baseR = this.getNodeRadius(node);
-      const isHovered = this.hoveredNodeId === node.id;
-      const r = isHovered ? baseR * 1.15 : baseR;
+      const r = this.getNodeRadius(node);
 
       ctx.save();
       ctx.translate(pos.x, pos.y);
@@ -1167,14 +1166,12 @@ export class RefineryCanvasEngine {
     }
 
     // 4. Draw Enlarged Central Hive as React Bits Pro "Glyph Orb" (radius = 112)
-    drawGlyphOrbHive(ctx, centerX, centerY, 112, this.clock, this.dpr);
+    drawGlyphOrbHive(ctx, centerX, centerY, 112 * this.getVisualScale(), this.clock, this.dpr);
 
     // 5. Draw Right-Side 16-Node B2B & Enterprise Ecosystem (Symmetrical Frameless / Borderless Levitating Logos)
     for (const node of visibleB2BNodes) {
       const pos = this.getB2BNodePosition(node);
-      const baseR = this.getB2BNodeRadius(node);
-      const isHovered = this.hoveredB2BId === node.id;
-      const r = isHovered ? baseR * 1.15 : baseR;
+      const r = this.getB2BNodeRadius(node);
 
       ctx.save();
       ctx.translate(pos.x, pos.y);

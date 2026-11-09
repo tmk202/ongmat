@@ -9,6 +9,12 @@ export default {
       return Response.redirect(url.toString(), 301);
     }
 
+    if (url.pathname === '/google4334487ca5e49b48.html') {
+      return new Response('google-site-verification: google4334487ca5e49b48.html\n', {
+        headers: { 'Content-Type': 'text/html; charset=utf-8' },
+      });
+    }
+
     if (url.pathname === '/api/lead' && request.method === 'POST') {
       try {
         const payload = await request.json();

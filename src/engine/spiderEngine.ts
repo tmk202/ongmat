@@ -1066,8 +1066,6 @@ export class SpiderCabinetEngine {
         }, 650);
       }
       this.lastTapTime = now;
-    } else if (e.button === 0) {
-      this.startJumpToFly();
     }
   };
 
