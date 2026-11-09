@@ -16,6 +16,7 @@ import amazonTerminal from '../data/amazon-shopify-buybox-terminal.json';
 import tiktokVault from '../data/tiktok-shop-live-telemetry.json';
 import etsyHub from '../data/etsy-lazada-omni-hub.json';
 import { buildHomeJsonLd, DEFAULT_DESCRIPTION, DEFAULT_TITLE, SITE_ORIGIN } from '../seo/seoHead';
+import GoogleAnalytics from '../components/GoogleAnalytics.astro';
 
 const jsonLd = JSON.stringify(buildHomeJsonLd());
 ---
@@ -30,6 +31,7 @@ const jsonLd = JSON.stringify(buildHomeJsonLd());
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
     <meta name="theme-color" content="#1129e2" />
+    <GoogleAnalytics />
     <title>{DEFAULT_TITLE}</title>
     <meta name="description" content={DEFAULT_DESCRIPTION} />
     <link rel="canonical" href={`${SITE_ORIGIN}/`} />
