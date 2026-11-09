@@ -12,12 +12,15 @@
     "preview": "npm run build && wrangler dev --config deploy.jsonc",
     "astro": "astro",
     "generate-types": "wrangler types",
-    "deploy": "astro build && wrangler deploy --config deploy.jsonc"
+    "deploy": "astro build && wrangler deploy --config deploy.jsonc",
+    "backend": "node backend/index.mjs",
+    "backend:test": "node --test backend/test/api.test.mjs"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.4.4",
     "@astrojs/sitemap": "^3.7.4",
-    "astro": "^7.4.5"
+    "astro": "^7.4.5",
+    "pg": "^8.23.1"
   },
   "devDependencies": {
     "wrangler": "^4.157.0"

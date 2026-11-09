@@ -31,6 +31,39 @@ export default {
       }
     }
 
+    if (url.pathname.startsWith('/api/v1/') && request.method === 'GET') {
+      const key = url.pathname === '/api/v1/metrics'
+        ? 'metrics/latest.json'
+        : url.pathname === '/api/v1/items'
+          ? 'items/top.json'
+          : url.pathname === '/api/v1/meta'
+            ? 'metrics/meta.json'
+            : null;
+
+      if (!key) {
+        return new Response(JSON.stringify({ ok: false, error: { code: 'NOT_FOUND', message: 'Unknown endpoint' } }), {
+          status: 404,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+
+      const object = await env.GOLD.get(key);
+      if (!object) {
+        return new Response(
+          JSON.stringify({ ok: false, error: { code: 'NO_DATA', message: 'No snapshot published yet' } }),
+          { status: 503, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } }
+        );
+      }
+
+      return new Response(object.body, {
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Cache-Control': 'public, max-age=60, s-maxage=300, stale-while-revalidate=86400',
+          'Access-Control-Allow-Origin': '*',
+        },
+      });
+    }
+
     return env.ASSETS.fetch(request);
   },
 };
