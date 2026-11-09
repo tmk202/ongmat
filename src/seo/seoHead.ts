@@ -37,6 +37,12 @@ export function buildHomeJsonLd() {
         name: 'ecommarketdata',
         url: `${SITE_ORIGIN}/`,
         description: DEFAULT_DESCRIPTION,
+        logo: {
+          '@type': 'ImageObject',
+          url: `${SITE_ORIGIN}/icon-512.png`,
+          width: 512,
+          height: 512,
+        },
         sameAs: [
           'https://ecommarketdata.com',
         ],
@@ -88,6 +94,12 @@ export function buildDatasetJsonLd(artifact: CuriosityArtifact) {
         '@id': `${SITE_ORIGIN}/#organization`,
         name: 'ecommarketdata',
         url: `${SITE_ORIGIN}/`,
+        logo: {
+          '@type': 'ImageObject',
+          url: `${SITE_ORIGIN}/icon-512.png`,
+          width: 512,
+          height: 512,
+        },
       },
       {
         '@type': 'BreadcrumbList',
