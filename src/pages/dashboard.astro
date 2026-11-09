@@ -300,8 +300,11 @@ const jsonLd = {
 
     const lines = series
       .map((item, index) => {
-        const points = item.values.map((value, i) => ({ x: xAt(i), y: yAt(value) }));
         const color = PALETTE[index % PALETTE.length];
+        if (item.values.length === 1) {
+          return `<circle cx="${xAt(0).toFixed(1)}" cy="${yAt(item.values[0]).toFixed(1)}" r="4.5" fill="${color}" stroke="#fff" stroke-width="2" />`;
+        }
+        const points = item.values.map((value, i) => ({ x: xAt(i), y: yAt(value) }));
         return `<path d="${smoothPath(points)}" fill="none" stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />`;
       })
       .join('');
