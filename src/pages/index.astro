@@ -18,41 +18,6 @@ import etsyHub from '../data/etsy-lazada-omni-hub.json';
 import { buildHomeJsonLd, DEFAULT_DESCRIPTION, DEFAULT_TITLE, SITE_ORIGIN } from '../seo/seoHead';
 
 const jsonLd = JSON.stringify(buildHomeJsonLd());
-
-const pedestalPlatforms = [
-  {
-    id: 'pedestal-shopee',
-    platform: 'Shopee',
-    gmv30d: '$368.4M',
-    unitsSold: '14.9M units',
-    cvr: '4.32% CVR',
-    growth: '+18.4%',
-  },
-  {
-    id: 'pedestal-tiktok',
-    platform: 'TikTok Shop',
-    gmv30d: '$282.3M',
-    unitsSold: '11.8M units',
-    cvr: '4.15% CVR',
-    growth: '+31.2%',
-  },
-  {
-    id: 'pedestal-amazon',
-    platform: 'Amazon',
-    gmv30d: '$240.8M',
-    unitsSold: '10.3M units',
-    cvr: '4.12% CVR',
-    growth: '+9.6%',
-  },
-  {
-    id: 'pedestal-lazada',
-    platform: 'Lazada',
-    gmv30d: '$172.4M',
-    unitsSold: '8.4M units',
-    cvr: '4.83% CVR',
-    growth: '+12.1%',
-  },
-];
 ---
 
 <!doctype html>
@@ -136,11 +101,6 @@ const pedestalPlatforms = [
 
           <h2 class="cabinet" data-web-anchor>the curiosity<br />cabinet</h2>
           <p class="tagline" data-web-anchor>Deep e-commerce market intelligence for modern enterprises.</p>
-
-          <!-- Scroll down indicator -->
-          <a href="#harvester-pipeline" class="hero-scroll-indicator" aria-label="Scroll to explore live refinery and 3D specimens">
-            <span>Explore Live Refinery &amp; 3D Specimens ↓</span>
-          </a>
         </div>
 
         <canvas id="astro-web-canvas" class="web-layer"></canvas>
@@ -162,10 +122,9 @@ const pedestalPlatforms = [
              ================================================================== -->
         <section class="landing-section" id="harvester-pipeline">
           <div class="landing-section-header">
-            <span class="landing-kicker">01 · Autonomous Nectar Pipeline</span>
-            <h2 class="landing-title">Live Honey-Data Refinery</h2>
+            <h2 class="landing-title">Raw Commerce Signals, Refined &amp; Delivered</h2>
             <p class="landing-subtitle">
-              Hover over any 3D platform sculpture to surge extraction velocity into the central honeycomb centrifuge.
+              We capture, normalize, and enrich real-time telemetry across global marketplaces and social commerce—streaming clean, schema-ready intelligence directly into your enterprise data warehouse, BI stack, and AI models.
             </p>
           </div>
 
@@ -173,318 +132,395 @@ const pedestalPlatforms = [
           <div class="refinery-canvas-stage">
             <canvas id="refinery-canvas" class="refinery-canvas-el"></canvas>
           </div>
+        </section>
 
-          <div class="refinery-caption-strip">
-            <div class="refinery-caption-pill">
-              <div class="refinery-caption-num">01</div>
-              <div class="refinery-caption-text">
-                <strong>Siphon Signals</strong>
-                <span>21+ Multi-Platform Ecosystem</span>
-              </div>
+        <!-- ==================================================================
+             SECTION 3: HOW WE WORK — REACTBITS PRO HOW-IT-WORKS-8
+             ================================================================== -->
+        <section class="landing-section hiw8-section" id="telemetry" aria-labelledby="hiw8-heading">
+          <div class="hiw8-container">
+            <div class="hiw8-header">
+              <h2 id="hiw8-heading" class="hiw8-heading">How We Work</h2>
+              <p class="hiw8-subheading">
+                Scope your target marketplaces, validate fields once, and let scheduled syncs keep every table in your warehouse fresh.
+              </p>
             </div>
-            <div class="refinery-caption-pill">
-              <div class="refinery-caption-num">02</div>
-              <div class="refinery-caption-text">
-                <strong>Centrifuge Nectar</strong>
-                <span>De-Noise &amp; Normalize</span>
-              </div>
-            </div>
-            <div class="refinery-caption-pill">
-              <div class="refinery-caption-num">03</div>
-              <div class="refinery-caption-text">
-                <strong>Stream to Vault</strong>
-                <span>PostgreSQL · Snowflake · API</span>
-              </div>
-            </div>
+
+            <ol class="hiw8-grid">
+              <!-- Step 1 -->
+              <li class="hiw8-step">
+                <div class="hiw8-visual-card" aria-hidden="true">
+                  <div class="hiw8-visual-stack">
+                    <div class="hiw8-source-item">
+                      <span class="hiw8-source-code">SP</span>
+                      <span class="hiw8-source-main">
+                        <span class="hiw8-source-name">Shopee &amp; Lazada</span>
+                        <span class="hiw8-source-meta"> · Production</span>
+                      </span>
+                      <span class="hiw8-source-pill">
+                        <svg class="hiw8-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M20 6 9 17l-5-5" />
+                        </svg>
+                        Linked
+                      </span>
+                    </div>
+
+                    <div class="hiw8-source-item">
+                      <span class="hiw8-source-code">TK</span>
+                      <span class="hiw8-source-main">
+                        <span class="hiw8-source-name">TikTok Shop</span>
+                        <span class="hiw8-source-meta"> · Live</span>
+                      </span>
+                      <span class="hiw8-source-pill">
+                        <svg class="hiw8-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M20 6 9 17l-5-5" />
+                        </svg>
+                        Linked
+                      </span>
+                    </div>
+
+                    <div class="hiw8-source-item">
+                      <span class="hiw8-source-code">WH</span>
+                      <span class="hiw8-source-main">
+                        <span class="hiw8-source-name">Warehouse</span>
+                        <span class="hiw8-source-meta"> · Destination</span>
+                      </span>
+                      <span class="hiw8-source-pill">
+                        <svg class="hiw8-check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M20 6 9 17l-5-5" />
+                        </svg>
+                        Linked
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="hiw8-connector">
+                  <div class="hiw8-line-track hiw8-span-first" aria-hidden="true"></div>
+                  <div class="hiw8-line-draw hiw8-span-first hiw8-delay-0" aria-hidden="true"></div>
+                  <span class="hiw8-step-badge">1</span>
+                </div>
+
+                <h3 class="hiw8-step-title">Connect your sources</h3>
+                <p class="hiw8-step-copy">
+                  Select your target marketplaces, categories, and historical depth. We manage extraction and anti-rotations so feeds never silently expire.
+                </p>
+              </li>
+
+              <!-- Step 2 -->
+              <li class="hiw8-step">
+                <div class="hiw8-visual-card" aria-hidden="true">
+                  <div class="hiw8-visual-stack">
+                    <div class="hiw8-map-row">
+                      <span class="hiw8-map-token">sku_id</span>
+                      <svg class="hiw8-arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14" />
+                        <path d="m12 5 7 7-7 7" />
+                      </svg>
+                      <span class="hiw8-map-token">product_id</span>
+                    </div>
+
+                    <div class="hiw8-map-row">
+                      <span class="hiw8-map-token">sold_30d</span>
+                      <svg class="hiw8-arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14" />
+                        <path d="m12 5 7 7-7 7" />
+                      </svg>
+                      <span class="hiw8-map-token">monthly_units</span>
+                    </div>
+
+                    <div class="hiw8-map-row">
+                      <span class="hiw8-map-token">gmv_raw</span>
+                      <svg class="hiw8-arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14" />
+                        <path d="m12 5 7 7-7 7" />
+                      </svg>
+                      <span class="hiw8-map-token">amount_usd</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="hiw8-connector">
+                  <div class="hiw8-line-track hiw8-span-mid" aria-hidden="true"></div>
+                  <div class="hiw8-line-draw hiw8-span-mid hiw8-delay-1" aria-hidden="true"></div>
+                  <span class="hiw8-step-badge">2</span>
+                </div>
+
+                <h3 class="hiw8-step-title">Map fields once</h3>
+                <p class="hiw8-step-copy">
+                  Validate a free sample dataset and pair fields side by side with strict type checks and sensible defaults. Every future sync honors the mapping.
+                </p>
+              </li>
+
+              <!-- Step 3 -->
+              <li class="hiw8-step">
+                <div class="hiw8-visual-card" aria-hidden="true">
+                  <div class="hiw8-sync-box">
+                    <div class="hiw8-sync-top">
+                      <span class="hiw8-sync-label">Nightly sync</span>
+                      <span class="hiw8-live-pill">
+                        <span class="hiw8-live-dot"></span>
+                        Live
+                      </span>
+                    </div>
+
+                    <div class="hiw8-progress-bg">
+                      <div class="hiw8-progress-bar"></div>
+                    </div>
+
+                    <dl class="hiw8-metrics">
+                      <div class="hiw8-metric-row">
+                        <dt>Records moved</dt>
+                        <dd>1,420,318</dd>
+                      </div>
+                      <div class="hiw8-metric-row">
+                        <dt>Duration</dt>
+                        <dd>54 s</dd>
+                      </div>
+                      <div class="hiw8-metric-row">
+                        <dt>Next run</dt>
+                        <dd>02:00 UTC</dd>
+                      </div>
+                    </dl>
+                  </div>
+                </div>
+
+                <div class="hiw8-connector">
+                  <div class="hiw8-line-track hiw8-span-last" aria-hidden="true"></div>
+                  <div class="hiw8-line-draw hiw8-span-last hiw8-delay-2" aria-hidden="true"></div>
+                  <span class="hiw8-step-badge">3</span>
+                </div>
+
+                <h3 class="hiw8-step-title">Let the schedule run</h3>
+                <p class="hiw8-step-copy">
+                  Syncs run nightly or on demand, with retries, deduplication, and a full audit trail on every commerce record delivered to your stack.
+                </p>
+              </li>
+            </ol>
           </div>
         </section>
 
         <!-- ==================================================================
-             SECTION 3: 3D PLATFORM TELEMETRY PEDESTALS (Logo & Motion First)
+             SECTION 4: FINAL ENTERPRISE CTA & STUDIO DISPATCH CONSOLE
              ================================================================== -->
-        <section class="landing-section" id="telemetry">
-          <div class="landing-section-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px;">
-            <div>
-              <span class="landing-kicker">02 · Live Marketplace Telemetry</span>
-              <h2 class="landing-title" style="margin-bottom: 0;">30-Day Harvested Volume</h2>
-            </div>
-            <a href="/dashboard/" class="lead-primary-btn" style="padding: 10px 20px; font-size: 0.86rem;">
-              Open Full Telemetry Dashboard →
-            </a>
-          </div>
+        <section class="landing-section" id="contact" style="border-bottom: none; padding-top: 24px;">
+          <div class="cta-split-showcase">
+            <!-- Left Column: Headline + Frameless 3D Hive Centerpiece + SLA Pills -->
+            <div class="cta-showcase-left">
+              <h2 id="cta-rising-ink-title" class="final-cta-title">Ready to Receive Guaranteed Commerce Data?</h2>
+              <p class="final-cta-sub">
+                Get a tailored sample dataset or connect your enterprise warehouse in under 24 hours.
+              </p>
 
-          <div class="pedestal-arena-grid">
-            {pedestalPlatforms.map((p) => (
-              <div class="pedestal-card">
-                <div class="pedestal-sculpture-stage">
-                  <div class="pedestal-orbit-ring"></div>
-                  <img id={p.id} alt={p.platform} width="108" height="108" class="pedestal-3d-img" />
-                </div>
-                <div style="font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-70);">
-                  {p.platform}
-                </div>
-                <div class="pedestal-gmv">{p.gmv30d}</div>
-                <span class="trend-pos">{p.growth} MoM</span>
-                <div class="pedestal-meta-row">
-                  <span>{p.unitsSold}</span>
-                  <span>·</span>
-                  <span>{p.cvr}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <!-- ==================================================================
-             SECTION 4: 4 CURIOSITY CABINET 3D SPECIMEN DOMES
-             ================================================================== -->
-        <section class="landing-section" id="datasets">
-          <div class="landing-section-header">
-            <span class="landing-kicker">03 · Curiosity Cabinet Vault</span>
-            <h2 class="landing-title">3D Specimen Dossiers</h2>
-          </div>
-
-          <div class="datasets-grid">
-            <!-- Specimen 1: Shopee -->
-            <a href={`/data/${shopeePod.slug}`} class="specimen-card-3d">
-              <div class="specimen-inner">
-                <div class="specimen-glass-dome">
-                  <div class="specimen-glass-glare"></div>
-                  <span class="honey-orb orb-1"></span>
-                  <span class="honey-orb orb-2"></span>
-                  <span class="honey-orb orb-3"></span>
-                  <img id="astro-spec-shopee" alt={shopeePod.title} width="132" height="132" class="specimen-3d-sculpture" />
-                </div>
-                <span class="dataset-platform-kicker">Shopee &amp; TikTok Shop</span>
-                <div class="dataset-metric-highlight">2.1M+ Daily Orders</div>
-                <h3>{shopeePod.title}</h3>
-                <span class="dataset-card-cta">Open Specimen →</span>
-              </div>
-            </a>
-
-            <!-- Specimen 2: Amazon -->
-            <a href={`/data/${amazonTerminal.slug}`} class="specimen-card-3d">
-              <div class="specimen-inner">
-                <div class="specimen-glass-dome">
-                  <div class="specimen-glass-glare"></div>
-                  <span class="honey-orb orb-1"></span>
-                  <span class="honey-orb orb-2"></span>
-                  <span class="honey-orb orb-3"></span>
-                  <img id="astro-spec-amazon" alt={amazonTerminal.title} width="132" height="132" class="specimen-3d-sculpture" />
-                </div>
-                <span class="dataset-platform-kicker">Amazon &amp; Shopify</span>
-                <div class="dataset-metric-highlight">94.2% BuyBox Win</div>
-                <h3>{amazonTerminal.title}</h3>
-                <span class="dataset-card-cta">Open Specimen →</span>
-              </div>
-            </a>
-
-            <!-- Specimen 3: TikTok -->
-            <a href={`/data/${tiktokVault.slug}`} class="specimen-card-3d">
-              <div class="specimen-inner">
-                <div class="specimen-glass-dome">
-                  <div class="specimen-glass-glare"></div>
-                  <span class="honey-orb orb-1"></span>
-                  <span class="honey-orb orb-2"></span>
-                  <span class="honey-orb orb-3"></span>
-                  <img id="astro-spec-tiktok" alt={tiktokVault.title} width="132" height="132" class="specimen-3d-sculpture" />
-                </div>
-                <span class="dataset-platform-kicker">TikTok Live Stream</span>
-                <div class="dataset-metric-highlight">$14.8K / Hr Peak</div>
-                <h3>{tiktokVault.title}</h3>
-                <span class="dataset-card-cta">Open Specimen →</span>
-              </div>
-            </a>
-
-            <!-- Specimen 4: Shopify -->
-            <a href={`/data/${etsyHub.slug}`} class="specimen-card-3d">
-              <div class="specimen-inner">
-                <div class="specimen-glass-dome">
-                  <div class="specimen-glass-glare"></div>
-                  <span class="honey-orb orb-1"></span>
-                  <span class="honey-orb orb-2"></span>
-                  <span class="honey-orb orb-3"></span>
-                  <img id="astro-spec-shopify" alt={etsyHub.title} width="132" height="132" class="specimen-3d-sculpture" />
-                </div>
-                <span class="dataset-platform-kicker">Shopify &amp; Cross-Border</span>
-                <div class="dataset-metric-highlight">3.8d Avg Transit</div>
-                <h3>{etsyHub.title}</h3>
-                <span class="dataset-card-cta">Open Specimen →</span>
-              </div>
-            </a>
-          </div>
-        </section>
-
-        <!-- ==================================================================
-             SECTION 5: 4 3D SCULPTED MECHANICAL MODULES (B2B Engineering)
-             ================================================================== -->
-        <section class="landing-section" id="services">
-          <div class="landing-section-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 16px;">
-            <div>
-              <span class="landing-kicker">04 · Studio Hardware &amp; AI Modules</span>
-              <h2 class="landing-title" style="margin-bottom: 0;">Custom Engineering Apparatus</h2>
-            </div>
-            <a href="/services/" class="lead-ghost-btn" style="padding: 10px 18px; font-size: 0.86rem;">
-              Explore All 4 Services →
-            </a>
-          </div>
-
-          <div class="services-quad">
-            <article class="module-blueprint-card">
-              <div class="module-3d-stage">
-                <img id="astro-mod-scraper" alt="3D Harvester Claw" width="122" height="122" class="module-3d-img" />
-              </div>
-              <span class="module-tech-num" style="font-size: 0.78rem; opacity: 0.65;">MOD_01</span>
-              <h3>Web Scraping Swarms</h3>
-              <div class="service-tags" style="margin-top: 10px;">
-                <span class="service-tag">Playwright</span>
-                <span class="service-tag">Anti-Bot Mesh</span>
-                <span class="service-tag">Parquet</span>
-              </div>
-            </article>
-
-            <article class="module-blueprint-card">
-              <div class="module-3d-stage">
-                <img id="astro-mod-sync" alt="3D Planetary Sync" width="122" height="122" class="module-3d-img" />
-              </div>
-              <span class="module-tech-num" style="font-size: 0.78rem; opacity: 0.65;">MOD_02</span>
-              <h3>Process &amp; Price Sync</h3>
-              <div class="service-tags" style="margin-top: 10px;">
-                <span class="service-tag">FastAPI</span>
-                <span class="service-tag">Multi-Store</span>
-                <span class="service-tag">Audit Log</span>
-              </div>
-            </article>
-
-            <article class="module-blueprint-card">
-              <div class="module-3d-stage">
-                <img id="astro-mod-ai" alt="3D Neural Honeycomb" width="122" height="122" class="module-3d-img" />
-              </div>
-              <span class="module-tech-num" style="font-size: 0.78rem; opacity: 0.65;">MOD_03</span>
-              <h3>AI Extraction Agents</h3>
-              <div class="service-tags" style="margin-top: 10px;">
-                <span class="service-tag">LLM / RAG</span>
-                <span class="service-tag">SKU Tagging</span>
-                <span class="service-tag">Human Gate</span>
-              </div>
-            </article>
-
-            <article class="module-blueprint-card">
-              <div class="module-3d-stage">
-                <img id="astro-mod-api" alt="3D Nectar Pipeline" width="122" height="122" class="module-3d-img" />
-              </div>
-              <span class="module-tech-num" style="font-size: 0.78rem; opacity: 0.65;">MOD_04</span>
-              <h3>Custom APIs &amp; Warehouses</h3>
-              <div class="service-tags" style="margin-top: 10px;">
-                <span class="service-tag">PostgreSQL</span>
-                <span class="service-tag">Supabase</span>
-                <span class="service-tag">Snowflake</span>
-              </div>
-            </article>
-          </div>
-        </section>
-
-        <!-- ==================================================================
-             SECTION 6: INTERACTIVE BEE SWARM MISSION DISPENSER
-             ================================================================== -->
-        <section class="landing-section" id="contact" style="border-bottom: none;">
-          <div class="mission-configurator-box">
-            <div class="mission-split-grid">
-              <!-- Left: Live Interactive Bee Swarm Canvas with 6 3D Platform Sculptures -->
-              <div>
-                <span class="landing-kicker">05 · Interactive Swarm Command</span>
-                <h2 class="landing-title" style="font-size: clamp(24px, 2.6vw, 32px); margin-bottom: 12px;">
-                  Click Any 3D Emblem to Dispatch the Bee
-                </h2>
-                <div class="mission-swarm-stage">
-                  <canvas id="mission-swarm-canvas" class="mission-swarm-canvas"></canvas>
-                </div>
-              </div>
-
-              <!-- Right: Interactive Controls & 1-Click Dispatch -->
-              <div>
-                <div class="configurator-step-block">
-                  <div class="configurator-step-lbl">
-                    <span>1</span> Active Harvest Targets
-                  </div>
-                  <div class="platform-selector-grid" id="platform-selectors">
-                    <button type="button" class="platform-toggle-btn selected" data-platform="Shopee">
-                      <span class="platform-mini-dot" style="background: #ee4d2d;"></span>
-                      <span>Shopee</span>
-                    </button>
-                    <button type="button" class="platform-toggle-btn selected" data-platform="TikTok Shop">
-                      <span class="platform-mini-dot" style="background: #fe2c55;"></span>
-                      <span>TikTok Shop</span>
-                    </button>
-                    <button type="button" class="platform-toggle-btn selected" data-platform="Amazon">
-                      <span class="platform-mini-dot" style="background: #ff9900;"></span>
-                      <span>Amazon</span>
-                    </button>
-                    <button type="button" class="platform-toggle-btn" data-platform="Shopify">
-                      <span class="platform-mini-dot" style="background: #95bf47;"></span>
-                      <span>Shopify</span>
-                    </button>
-                    <button type="button" class="platform-toggle-btn" data-platform="Lazada">
-                      <span class="platform-mini-dot" style="background: #0f146d;"></span>
-                      <span>Lazada</span>
-                    </button>
-                    <button type="button" class="platform-toggle-btn" data-platform="Etsy">
-                      <span class="platform-mini-dot" style="background: #f1641e;"></span>
-                      <span>Etsy</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div class="configurator-step-block">
-                  <div class="configurator-step-lbl">
-                    <span>2</span> Harvest Cadence
-                  </div>
-                  <div class="config-pill-row" id="frequency-selectors">
-                    <button type="button" class="config-choice-btn selected" data-freq="Hourly Stream">Hourly Stream</button>
-                    <button type="button" class="config-choice-btn" data-freq="Daily Snapshot">Daily Snapshot</button>
-                    <button type="button" class="config-choice-btn" data-freq="Real-time Webhook">Real-time Webhook</button>
-                  </div>
-                </div>
-
-                <div class="configurator-step-block">
-                  <div class="configurator-step-lbl">
-                    <span>3</span> Vault Destination
-                  </div>
-                  <div class="config-pill-row" id="destination-selectors">
-                    <button type="button" class="config-choice-btn selected" data-dest="PostgreSQL / Supabase">PostgreSQL / Supabase</button>
-                    <button type="button" class="config-choice-btn" data-dest="REST / GraphQL API">REST / GraphQL API</button>
-                    <button type="button" class="config-choice-btn" data-dest="Parquet / Snowflake">Parquet / Snowflake</button>
-                  </div>
-                </div>
-
-                <div class="mission-terminal" id="mission-terminal-output" aria-live="polite" style="margin-top: 16px; padding: 14px 18px;">
-                  <div>&gt; TARGETS: <span class="terminal-accent" id="term-platforms">Shopee, TikTok Shop, Amazon</span></div>
-                  <div>&gt; CADENCE: <span class="terminal-accent" id="term-freq">Hourly Stream</span> → <span class="terminal-accent" id="term-dest">PostgreSQL / Supabase</span></div>
-                </div>
-
-                <div class="mission-launch-row" style="margin-top: 18px;">
-                  <a href="mailto:admin@ecommarketdata.com?subject=Harvester%20Mission%20Scope" id="mission-dispatch-btn" class="lead-primary-btn" style="width: 100%; justify-content: center; padding: 14px 24px;">
-                    <span>Launch Harvester Mission (admin@ecommarketdata.com) →</span>
-                  </a>
-                </div>
+              <div class="cta-visual-centerpiece">
+                <canvas id="mission-swarm-canvas" class="mission-swarm-canvas"></canvas>
               </div>
             </div>
+
+            <!-- Right Column: Architectural Glass Console Form -->
+            <form id="enterprise-lead-form" class="cta-console-card" novalidate>
+              <div class="cta-form-grid">
+                <div class="cta-field">
+                  <label class="cta-label" for="lead-name">Full Name &amp; Company *</label>
+                  <div class="cta-input-shell">
+                    <svg class="cta-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
+                    </svg>
+                    <input
+                      id="lead-name"
+                      name="name"
+                      type="text"
+                      required
+                      class="cta-input"
+                      placeholder="Alex Morgan · Acme Corp"
+                    />
+                  </div>
+                </div>
+
+                <div class="cta-field">
+                  <label class="cta-label" for="lead-email">Work Email *</label>
+                  <div class="cta-input-shell">
+                    <svg class="cta-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <rect x="2" y="4" width="20" height="16" rx="3" />
+                      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                    </svg>
+                    <input
+                      id="lead-email"
+                      name="email"
+                      type="email"
+                      required
+                      class="cta-input"
+                      placeholder="alex@company.com"
+                    />
+                  </div>
+                </div>
+
+                <div class="cta-field cta-field-full">
+                  <label class="cta-label" for="lead-telegram">Telegram / Phone</label>
+                  <div class="cta-input-shell">
+                    <svg class="cta-input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                      <path d="m22 2-7 20-4-9-9-4Z" />
+                      <path d="M22 2 11 13" />
+                    </svg>
+                    <input
+                      id="lead-telegram"
+                      name="telegram"
+                      type="text"
+                      class="cta-input"
+                      placeholder="@username or +84..."
+                    />
+                  </div>
+                </div>
+
+                <div class="cta-field cta-field-full">
+                  <div class="cta-label-row">
+                    <span class="cta-label">Target Marketplaces</span>
+                    <span class="cta-counter-badge" id="lead-plat-counter">6 / 6 Active</span>
+                  </div>
+                  <div class="cta-plat-grid" id="platform-selectors">
+                    <button type="button" class="cta-plat-pill selected" data-platform="Shopee">
+                      Shopee
+                    </button>
+                    <button type="button" class="cta-plat-pill selected" data-platform="TikTok Shop">
+                      TikTok Shop
+                    </button>
+                    <button type="button" class="cta-plat-pill selected" data-platform="Amazon">
+                      Amazon
+                    </button>
+                    <button type="button" class="cta-plat-pill selected" data-platform="Shopify">
+                      Shopify
+                    </button>
+                    <button type="button" class="cta-plat-pill selected" data-platform="Lazada">
+                      Lazada
+                    </button>
+                    <button type="button" class="cta-plat-pill selected" data-platform="Etsy">
+                      Etsy
+                    </button>
+                  </div>
+                </div>
+
+                <div class="cta-field cta-field-full">
+                  <label class="cta-label" for="lead-message">Data Scope &amp; Historical Depth</label>
+                  <textarea
+                    id="lead-message"
+                    name="message"
+                    rows="2"
+                    class="cta-textarea"
+                    placeholder="e.g. 36-month historical GMV, daily SKU pricing & brand share..."
+                  ></textarea>
+                </div>
+              </div>
+
+              <div class="cta-submit-row">
+                <button type="submit" id="lead-submit-btn" class="specular-button specular-button--lg">
+                  <canvas class="specular-button__light" aria-hidden="true"></canvas>
+                  <span class="specular-button__label">
+                    <span id="lead-submit-text">Request Free Sample Dataset</span>
+                  </span>
+                </button>
+              </div>
+
+              <div id="lead-feedback-banner" class="cta-feedback-banner" role="status" aria-live="polite"></div>
+            </form>
           </div>
 
-          <!-- Semantic Footer -->
-          <footer class="landing-footer">
-            <div class="landing-footer-inner">
-              <span>© {new Date().getFullYear()} ecommarketdata · Architected by Tu Ngoc Nguyen (Botslave)</span>
-              <nav class="landing-footer-links" aria-label="Footer Navigation">
-                <a href="/data/">data</a>
-                <a href="/services/">services</a>
-                <a href="/pricing/">pricing</a>
-                <a href="/dashboard/">dashboard</a>
-                <a href="/blog/">blog</a>
-                <a href="/policy/">policy</a>
-                <a href="/methodology/">methodology</a>
-                <a href="/about/">about</a>
-              </nav>
+          <!-- ReactBits Pro Footer 8 -->
+          <footer id="rb-footer8" class="rb-footer8">
+            <div class="rb-f8-container">
+              <div class="rb-f8-grid">
+                <!-- Col 1: Brand Tagline + 4 Social Icon Buttons -->
+                <div class="rb-f8-brand-col rb-f8-anim rb-f8-d0">
+                  <p class="rb-f8-tagline">
+                    ecommarketdata is the modern and intuitive way to model &amp; receive guaranteed commerce intelligence.
+                  </p>
+                  <div class="rb-f8-socials">
+                    <a href="https://x.com" target="_blank" rel="noopener noreferrer" class="rb-f8-social-btn" aria-label="X">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                      </svg>
+                    </a>
+                    <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" class="rb-f8-social-btn" aria-label="Instagram">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                        <rect x="3" y="3" width="18" height="18" rx="5" />
+                        <circle cx="12" cy="12" r="4" />
+                        <circle cx="17.5" cy="6.5" r="1" fill="currentColor" />
+                      </svg>
+                    </a>
+                    <a href="https://youtube.com" target="_blank" rel="noopener noreferrer" class="rb-f8-social-btn" aria-label="YouTube">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M23.5 6.5a3 3 0 0 0-2.1-2.1C19.5 4 12 4 12 4s-7.5 0-9.4.4A3 3 0 0 0 .5 6.5C0 8.4 0 12 0 12s0 3.6.5 5.5a3 3 0 0 0 2.1 2.1C4.5 20 12 20 12 20s7.5 0 9.4-.4a3 3 0 0 0 2.1-2.1c.5-1.9.5-5.5.5-5.5s0-3.6-.5-5.5zM9.6 15.6V8.4l6.4 3.6z" />
+                      </svg>
+                    </a>
+                    <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" class="rb-f8-social-btn" aria-label="LinkedIn">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5zM3 9h4v12H3zm7 0h3.8v1.7h.05c.53-1 1.84-2.05 3.78-2.05 4.04 0 4.78 2.66 4.78 6.12V21h-4v-5.5c0-1.3-.02-3-1.83-3s-2.11 1.43-2.11 2.9V21h-4z" />
+                      </svg>
+                    </a>
+                  </div>
+                </div>
+
+                <!-- Col 2: Product -->
+                <div class="rb-f8-link-col rb-f8-anim rb-f8-d1">
+                  <h4 class="rb-f8-col-title">Product</h4>
+                  <ul class="rb-f8-link-list">
+                    <li class="rb-f8-link-item">
+                      <a href="/data/" class="rb-f8-link">Datasets Catalog</a>
+                    </li>
+                    <li class="rb-f8-link-item">
+                      <a href="/services/" class="rb-f8-link">Data Pipelines</a>
+                    </li>
+                    <li class="rb-f8-link-item">
+                      <a href="/pricing/" class="rb-f8-link">Pricing</a>
+                    </li>
+                  </ul>
+                </div>
+
+                <!-- Col 3: Resources -->
+                <div class="rb-f8-link-col rb-f8-anim rb-f8-d2">
+                  <h4 class="rb-f8-col-title">Resources</h4>
+                  <ul class="rb-f8-link-list">
+                    <li class="rb-f8-link-item">
+                      <a href="/dashboard/" class="rb-f8-link">Live Dashboard</a>
+                    </li>
+                    <li class="rb-f8-link-item">
+                      <a href="/methodology/" class="rb-f8-link">Methodology</a>
+                    </li>
+                    <li class="rb-f8-link-item">
+                      <a href="/blog/" class="rb-f8-link">Research Journal</a>
+                    </li>
+                  </ul>
+                </div>
+
+                <!-- Col 4: Company -->
+                <div class="rb-f8-link-col rb-f8-anim rb-f8-d3">
+                  <h4 class="rb-f8-col-title">Company</h4>
+                  <ul class="rb-f8-link-list">
+                    <li class="rb-f8-link-item">
+                      <a href="/about/" class="rb-f8-link">About</a>
+                    </li>
+                    <li class="rb-f8-link-item">
+                      <a href="#contact" class="rb-f8-link">Free Sample</a>
+                      <span class="rb-f8-badge">24h sync</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <!-- Giant Outlined Fading Wordmark (Synced with Section 1 Cobalt Logo) -->
+              <div class="rb-f8-wordmark-wrap" aria-hidden="true">
+                <div class="rb-f8-wordmark">ecommarketdata</div>
+              </div>
+
+              <!-- Bottom Bar -->
+              <div class="rb-f8-bottom">
+                <p class="rb-f8-copy">© {new Date().getFullYear()} ecommarketdata / Guaranteed commerce intelligence</p>
+                <div class="rb-f8-legal">
+                  <a href="/methodology/" class="rb-f8-legal-link">Security</a>
+                  <a href="/policy/" class="rb-f8-legal-link">Terms of service</a>
+                  <a href="/policy/" class="rb-f8-legal-link">Privacy policy</a>
+                </div>
+              </div>
             </div>
           </footer>
         </section>
@@ -494,40 +530,26 @@ const pedestalPlatforms = [
     <script>
       import { getCabinetAssets } from '../assets/cabinetSprites';
       import { SpiderCabinetEngine } from '../engine/spiderEngine';
-      import { RefineryCanvasEngine, MissionSwarmEngine } from '../engine/refineryCanvasEngine';
+      import {
+        RefineryCanvasEngine,
+        MissionSwarmEngine,
+        RisingInkEngine,
+        SpecularButtonEngine,
+      } from '../engine/refineryCanvasEngine';
 
-      // 1. Bind all 3D Extruded Sculptures across Hero, Pedestals, Specimen Domes, and Mechanical Modules
+      // 1. Bind all 3D Extruded Sculptures in Hero
       const assets = getCabinetAssets();
       const bindImg = (id: string, src: string) => {
         const el = document.getElementById(id) as HTMLImageElement | null;
         if (el) el.src = src;
       };
 
-      // Hero sculptures
       bindImg('astro-logo-back', assets.logoBackUrl);
       bindImg('astro-logo-front', assets.logoFrontUrl);
       bindImg('astro-obj-mug', assets.mugUrl);
       bindImg('astro-obj-ibook', assets.ibookUrl);
       bindImg('astro-obj-book', assets.bookUrl);
       bindImg('astro-obj-tshirt', assets.tshirtUrl);
-
-      // Section 3: 3D Telemetry Pedestals
-      bindImg('pedestal-shopee', assets.mugUrl);
-      bindImg('pedestal-tiktok', assets.bookUrl);
-      bindImg('pedestal-amazon', assets.ibookUrl);
-      bindImg('pedestal-lazada', assets.lazadaUrl);
-
-      // Section 4: 3D Specimen Domes
-      bindImg('astro-spec-shopee', assets.mugUrl);
-      bindImg('astro-spec-amazon', assets.ibookUrl);
-      bindImg('astro-spec-tiktok', assets.bookUrl);
-      bindImg('astro-spec-shopify', assets.tshirtUrl);
-
-      // Section 5: 3D Sculpted Mechanical Modules
-      bindImg('astro-mod-scraper', assets.modScraperUrl);
-      bindImg('astro-mod-sync', assets.modSyncUrl);
-      bindImg('astro-mod-ai', assets.modAiUrl);
-      bindImg('astro-mod-api', assets.modApiUrl);
 
       // 2. Mount Hero Curiosity Cabinet Engine
       const heroCanvas = document.getElementById('astro-web-canvas') as HTMLCanvasElement | null;
@@ -541,45 +563,77 @@ const pedestalPlatforms = [
         new RefineryCanvasEngine(refineryCanvas, assets);
       }
 
-      // 4. Mount Section 6 Interactive Bee Swarm Mission Canvas Engine
-      const swarmCanvas = document.getElementById('mission-swarm-canvas') as HTMLCanvasElement | null;
-      const platformBtns = document.querySelectorAll<HTMLButtonElement>('.platform-toggle-btn');
-      const freqBtns = document.querySelectorAll<HTMLButtonElement>('#frequency-selectors .config-choice-btn');
-      const destBtns = document.querySelectorAll<HTMLButtonElement>('#destination-selectors .config-choice-btn');
-      const termPlatforms = document.getElementById('term-platforms');
-      const termFreq = document.getElementById('term-freq');
-      const termDest = document.getElementById('term-dest');
-      const dispatchBtn = document.getElementById('mission-dispatch-btn') as HTMLAnchorElement | null;
+      // 3b. Mount Section 3 HowItWorks8 & Footer8 Scroll-Reveal Observers
+      const hiw8Section = document.getElementById('telemetry');
+      if (hiw8Section) {
+        const hiwObserver = new IntersectionObserver(
+          ([entry]) => {
+            if (entry && entry.isIntersecting) {
+              hiw8Section.classList.add('is-inview');
+              hiwObserver.disconnect();
+            }
+          },
+          { rootMargin: '-80px', threshold: 0.12 }
+        );
+        hiwObserver.observe(hiw8Section);
+      }
 
+      const footer8El = document.getElementById('rb-footer8');
+      if (footer8El) {
+        const f8Observer = new IntersectionObserver(
+          ([entry]) => {
+            if (entry && entry.isIntersecting) {
+              footer8El.classList.add('is-inview');
+              f8Observer.disconnect();
+            }
+          },
+          { threshold: 0.08 }
+        );
+        f8Observer.observe(footer8El);
+      }
+
+      // 4. Mount Section 4 Final CTA Visual Centerpiece, Rising Ink Headline & Sync with Form
+      const risingTitleEl = document.getElementById('cta-rising-ink-title') as HTMLElement | null;
+      let risingInk: RisingInkEngine | null = null;
+      if (risingTitleEl) {
+        risingInk = new RisingInkEngine(risingTitleEl, {
+          color: '#0b1957',
+          colors: ['#93C5FD', '#1129E2'],
+          extrusion: 'solid',
+          lift: 0.52,
+          radius: 1.45,
+          view: 'pointer',
+          perspective: 1.35,
+          stiffness: 1.0,
+          damping: 0.5,
+          pop: 1.0,
+          shadow: 0.6,
+          intro: true,
+          area: 'parent',
+        });
+      }
+
+      const swarmCanvas = document.getElementById('mission-swarm-canvas') as HTMLCanvasElement | null;
+      const platformBtns = document.querySelectorAll<HTMLButtonElement>('#platform-selectors .cta-plat-pill');
+      const platCounter = document.getElementById('lead-plat-counter');
       let swarmEngine: MissionSwarmEngine | null = null;
 
-      const syncMissionUI = (selectedList: string[]) => {
+      const syncPlatformButtons = (selectedList: string[]) => {
         platformBtns.forEach((btn) => {
           const p = btn.getAttribute('data-platform') || '';
           btn.classList.toggle('selected', selectedList.includes(p));
         });
-        const activeFreqBtn = document.querySelector('#frequency-selectors .config-choice-btn.selected');
-        const activeDestBtn = document.querySelector('#destination-selectors .config-choice-btn.selected');
-        const freqText = activeFreqBtn?.getAttribute('data-freq') || 'Hourly Stream';
-        const destText = activeDestBtn?.getAttribute('data-dest') || 'PostgreSQL / Supabase';
-        const platText = selectedList.join(', ');
-
-        if (termPlatforms) termPlatforms.textContent = platText;
-        if (termFreq) termFreq.textContent = freqText;
-        if (termDest) termDest.textContent = destText;
-
-        if (dispatchBtn) {
-          const subject = encodeURIComponent(`Harvester Mission Scope: [${platText}]`);
-          const body = encodeURIComponent(
-            `Target Platforms: ${platText}\nCadence: ${freqText}\nDestination: ${destText}`
-          );
-          dispatchBtn.href = `mailto:admin@ecommarketdata.com?subject=${subject}&body=${body}`;
+        if (platCounter) {
+          platCounter.textContent = `${selectedList.length} / 6 Active`;
+          platCounter.classList.remove('pop');
+          void platCounter.offsetWidth;
+          platCounter.classList.add('pop');
         }
       };
 
       if (swarmCanvas) {
         swarmEngine = new MissionSwarmEngine(swarmCanvas, assets, (selectedList) => {
-          syncMissionUI(selectedList);
+          syncPlatformButtons(selectedList);
         });
       }
 
@@ -589,47 +643,120 @@ const pedestalPlatforms = [
           if (p && swarmEngine) {
             swarmEngine.togglePlatform(p);
           }
+          risingInk?.wave();
         });
       });
 
-      freqBtns.forEach((btn) => {
-        btn.addEventListener('click', () => {
-          freqBtns.forEach((b) => b.classList.remove('selected'));
-          btn.classList.add('selected');
-          const active: string[] = [];
-          platformBtns.forEach((b) => {
-            if (b.classList.contains('selected')) active.push(b.getAttribute('data-platform') || '');
+      // 5. Handle Enterprise Lead Form Motion, Specular Button & Submission -> Telegram & Gmail (/api/lead)
+      const leadForm = document.getElementById('enterprise-lead-form') as HTMLFormElement | null;
+      const submitBtn = document.getElementById('lead-submit-btn') as HTMLButtonElement | null;
+      const submitText = document.getElementById('lead-submit-text');
+      const feedbackBanner = document.getElementById('lead-feedback-banner');
+
+      if (submitBtn) {
+        new SpecularButtonEngine(submitBtn, {
+          radius: 18,
+          tint: '#1129e2',
+          tintOpacity: 1,
+          blur: 0,
+          textColor: '#ffffff',
+          lineColor: '#bae6fd',
+          baseColor: '#1d4ed8',
+          intensity: 1.45,
+          idleIntensity: 0.55,
+          shineSize: 14,
+          shineFade: 42,
+          thickness: 1.8,
+          glow: 1.35,
+          speed: 0.35,
+          followMouse: true,
+          proximity: 280,
+          autoAnimate: false,
+        });
+      }
+
+      if (leadForm) {
+        leadForm.addEventListener(
+          'pointermove',
+          (e) => {
+            const rect = leadForm.getBoundingClientRect();
+            leadForm.style.setProperty('--spot-x', `${(e.clientX - rect.left).toFixed(1)}px`);
+            leadForm.style.setProperty('--spot-y', `${(e.clientY - rect.top).toFixed(1)}px`);
+          },
+          { passive: true }
+        );
+
+        const formObserver = new IntersectionObserver(
+          ([entry]) => {
+            if (entry && entry.isIntersecting) {
+              leadForm.classList.add('is-revealed');
+              formObserver.disconnect();
+            }
+          },
+          { threshold: 0.18 }
+        );
+        formObserver.observe(leadForm);
+      }
+
+      leadForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!leadForm || !submitBtn || !feedbackBanner) return;
+
+        const formData = new FormData(leadForm);
+        const name = String(formData.get('name') || '').trim();
+        const email = String(formData.get('email') || '').trim();
+        const telegram = String(formData.get('telegram') || '').trim();
+        const warehouse = String(formData.get('warehouse') || 'Snowflake / BigQuery').trim();
+        const message = String(formData.get('message') || '').trim();
+
+        const platforms: string[] = [];
+        platformBtns.forEach((b) => {
+          if (b.classList.contains('selected')) {
+            platforms.push(b.getAttribute('data-platform') || '');
+          }
+        });
+
+        if (!name || !email) {
+          feedbackBanner.className = 'cta-feedback-banner show error';
+          feedbackBanner.textContent = 'Please enter your Full Name / Company and Work Email.';
+          return;
+        }
+
+        submitBtn.disabled = true;
+        if (submitText) submitText.textContent = 'Dispatching to Telegram & Gmail...';
+        feedbackBanner.className = 'cta-feedback-banner';
+
+        try {
+          const res = await fetch('/api/lead', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name,
+              email,
+              telegram,
+              warehouse,
+              platforms,
+              message,
+            }),
           });
-          syncMissionUI(active);
-        });
-      });
+          const data = await res.json();
 
-      destBtns.forEach((btn) => {
-        btn.addEventListener('click', () => {
-          destBtns.forEach((b) => b.classList.remove('selected'));
-          btn.classList.add('selected');
-          const active: string[] = [];
-          platformBtns.forEach((b) => {
-            if (b.classList.contains('selected')) active.push(b.getAttribute('data-platform') || '');
-          });
-          syncMissionUI(active);
-        });
-      });
-
-      // 5. 3D Tilt Interaction for Specimen Domes
-      const specimenCards = document.querySelectorAll<HTMLElement>('.specimen-card-3d');
-      specimenCards.forEach((card) => {
-        const inner = card.querySelector<HTMLElement>('.specimen-inner');
-        if (!inner) return;
-        card.addEventListener('pointermove', (e) => {
-          const rect = card.getBoundingClientRect();
-          const x = (e.clientX - rect.left) / rect.width - 0.5;
-          const y = (e.clientY - rect.top) / rect.height - 0.5;
-          inner.style.transform = `translateY(-6px) rotateX(${(-y * 10).toFixed(1)}deg) rotateY(${(x * 12).toFixed(1)}deg)`;
-        });
-        card.addEventListener('pointerleave', () => {
-          inner.style.transform = '';
-        });
+          if (res.ok && data.ok) {
+            feedbackBanner.className = 'cta-feedback-banner show success';
+            feedbackBanner.textContent =
+              '✓ Request sent directly to our Telegram & Gmail! Our data engineering team will reply within 2 hours.';
+            leadForm.reset();
+          } else {
+            throw new Error(data.error || 'Submission failed');
+          }
+        } catch {
+          feedbackBanner.className = 'cta-feedback-banner show error';
+          feedbackBanner.textContent =
+            'Could not reach server. Please check your connection or email admin@ecommarketdata.com directly.';
+        } finally {
+          submitBtn.disabled = false;
+          if (submitText) submitText.textContent = 'Request Free Sample Dataset';
+        }
       });
 
       // 6. Services Dropdown Menu

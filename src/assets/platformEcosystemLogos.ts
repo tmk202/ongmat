@@ -438,3 +438,363 @@ export function buildPlatformLogoMap(): Map<string, HTMLImageElement> {
   }
   return map;
 }
+
+// ============================================================================
+// Right-Side B2B & Enterprise Data Consumers Ecosystem (16 Recognizable B2B Brands)
+// ============================================================================
+
+export type B2BClusterId = 'warehouses' | 'bi' | 'ai' | 'erp';
+
+export interface B2BNodeConfig {
+  id: string;
+  name: string;
+  cluster: B2BClusterId;
+  tier: 1 | 2 | 3;
+  color: string;
+  rx: number; // Normalized X (0.68 .. 0.94, right 35-40% of canvas, mirroring left side)
+  ry: number; // Normalized Y (0.08 .. 0.92)
+  phaseOffset: number;
+}
+
+export const B2B_CLUSTER_HUB: Record<B2BClusterId, { hubRx: number; hubRy: number; outOffset: number }> = {
+  warehouses: { hubRx: 0.635, hubRy: 0.2, outOffset: -26 },
+  bi: { hubRx: 0.625, hubRy: 0.435, outOffset: -8 },
+  ai: { hubRx: 0.625, hubRy: 0.64, outOffset: 10 },
+  erp: { hubRx: 0.635, hubRy: 0.825, outOffset: 26 },
+};
+
+export const B2B_ECOSYSTEM_CONFIG: B2BNodeConfig[] = [
+  // Cluster 1: Cloud Data Warehouses & Lakehouses
+  {
+    id: 'snowflake',
+    name: 'Snowflake',
+    cluster: 'warehouses',
+    tier: 1,
+    color: '#29B5E8',
+    rx: 0.72,
+    ry: 0.165,
+    phaseOffset: 0.2,
+  },
+  {
+    id: 'databricks',
+    name: 'Databricks',
+    cluster: 'warehouses',
+    tier: 1,
+    color: '#FF3621',
+    rx: 0.825,
+    ry: 0.12,
+    phaseOffset: 0.9,
+  },
+  {
+    id: 'bigquery',
+    name: 'Google BigQuery',
+    cluster: 'warehouses',
+    tier: 2,
+    color: '#4285F4',
+    rx: 0.81,
+    ry: 0.235,
+    phaseOffset: 1.6,
+  },
+  {
+    id: 'postgresql',
+    name: 'PostgreSQL',
+    cluster: 'warehouses',
+    tier: 2,
+    color: '#336791',
+    rx: 0.915,
+    ry: 0.195,
+    phaseOffset: 2.3,
+  },
+  {
+    id: 'redshift',
+    name: 'AWS Redshift',
+    cluster: 'warehouses',
+    tier: 3,
+    color: '#8C4FFF',
+    rx: 0.91,
+    ry: 0.095,
+    phaseOffset: 3.0,
+  },
+
+  // Cluster 2: Enterprise BI & Executive Analytics
+  {
+    id: 'tableau',
+    name: 'Tableau',
+    cluster: 'bi',
+    tier: 1,
+    color: '#E97627',
+    rx: 0.71,
+    ry: 0.37,
+    phaseOffset: 0.5,
+  },
+  {
+    id: 'powerbi',
+    name: 'Power BI',
+    cluster: 'bi',
+    tier: 1,
+    color: '#F2C811',
+    rx: 0.77,
+    ry: 0.475,
+    phaseOffset: 1.3,
+  },
+  {
+    id: 'looker',
+    name: 'Looker',
+    cluster: 'bi',
+    tier: 2,
+    color: '#4285F4',
+    rx: 0.85,
+    ry: 0.355,
+    phaseOffset: 2.1,
+  },
+  {
+    id: 'palantir',
+    name: 'Palantir Foundry',
+    cluster: 'bi',
+    tier: 2,
+    color: '#111827',
+    rx: 0.885,
+    ry: 0.49,
+    phaseOffset: 2.8,
+  },
+  {
+    id: 'elastic',
+    name: 'Elasticsearch',
+    cluster: 'bi',
+    tier: 3,
+    color: '#00BFB3',
+    rx: 0.935,
+    ry: 0.415,
+    phaseOffset: 3.5,
+  },
+
+  // Cluster 3: Enterprise AI, LLM & Real-Time Streaming
+  {
+    id: 'openai',
+    name: 'OpenAI Enterprise',
+    cluster: 'ai',
+    tier: 1,
+    color: '#10A37F',
+    rx: 0.715,
+    ry: 0.625,
+    phaseOffset: 0.7,
+  },
+  {
+    id: 'anthropic',
+    name: 'Anthropic Claude',
+    cluster: 'ai',
+    tier: 2,
+    color: '#D97757',
+    rx: 0.82,
+    ry: 0.645,
+    phaseOffset: 1.8,
+  },
+  {
+    id: 'kafka',
+    name: 'Apache Kafka',
+    cluster: 'ai',
+    tier: 2,
+    color: '#2563EB',
+    rx: 0.905,
+    ry: 0.68,
+    phaseOffset: 2.9,
+  },
+
+  // Cluster 4: Global B2B ERP, Supply Chain & Operations
+  {
+    id: 'sap',
+    name: 'SAP ERP',
+    cluster: 'erp',
+    tier: 1,
+    color: '#008FD3',
+    rx: 0.725,
+    ry: 0.815,
+    phaseOffset: 0.4,
+  },
+  {
+    id: 'oracle',
+    name: 'Oracle NetSuite',
+    cluster: 'erp',
+    tier: 2,
+    color: '#F80000',
+    rx: 0.815,
+    ry: 0.775,
+    phaseOffset: 1.4,
+  },
+  {
+    id: 'servicenow',
+    name: 'ServiceNow',
+    cluster: 'erp',
+    tier: 2,
+    color: '#62D84E',
+    rx: 0.86,
+    ry: 0.895,
+    phaseOffset: 2.4,
+  },
+];
+
+export function buildB2BLogoMap(): Map<string, HTMLImageElement> {
+  const svgs: Record<string, string> = {
+    // 1. Snowflake (Iconic 6-branch crystal with chevrons)
+    snowflake: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+      <g stroke="#29B5E8" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round" fill="none">
+        <line x1="32" y1="8" x2="32" y2="56"/>
+        <line x1="11.2" y1="20" x2="52.8" y2="44"/>
+        <line x1="11.2" y1="44" x2="52.8" y2="20"/>
+        <polyline points="25,14 32,20 39,14"/>
+        <polyline points="25,50 32,44 39,50"/>
+        <polyline points="13,29 21,26 19,18"/>
+        <polyline points="45,46 43,38 51,35"/>
+        <polyline points="19,46 21,38 13,35"/>
+        <polyline points="51,29 43,26 45,18"/>
+      </g>
+      <circle cx="32" cy="32" r="4.5" fill="#ffffff" stroke="#29B5E8" stroke-width="3.5"/>
+    </svg>`,
+
+    // 2. Databricks (Iconic stacked red-orange isometric chevron layers)
+    databricks: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+      <polygon points="32,9 54,21 32,33 10,21" fill="#FF3621"/>
+      <polyline points="10,31 32,43 54,31" fill="none" stroke="#FF3621" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+      <polyline points="10,42 32,54 54,42" fill="none" stroke="#E02410" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`,
+
+    // 3. Google BigQuery (Magnifying lens with analytics bars inside)
+    bigquery: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+      <circle cx="29" cy="29" r="18" fill="none" stroke="#4285F4" stroke-width="5.5"/>
+      <line x1="42" y1="42" x2="54" y2="54" stroke="#34A853" stroke-width="6.5" stroke-linecap="round"/>
+      <rect x="20" y="29" width="4.5" height="9" rx="2" fill="#FBBC04"/>
+      <rect x="26.8" y="22" width="4.5" height="16" rx="2" fill="#4285F4"/>
+      <rect x="33.5" y="25" width="4.5" height="13" rx="2" fill="#EA4335"/>
+    </svg>`,
+
+    // 4. PostgreSQL (Iconic blue elephant geometric silhouette)
+    postgresql: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+      <path d="M18 18 C10 18 8 30 14 38 C18 43 22 40 22 33 V22 C22 14 42 14 42 24 V44 C42 50 37 52 34 49" fill="none" stroke="#336791" stroke-width="5.2" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M42 22 C52 20 55 32 48 40 C45 43 42 41 42 36" fill="none" stroke="#336791" stroke-width="4.8" stroke-linecap="round"/>
+      <circle cx="34" cy="26" r="2.8" fill="#336791"/>
+      <path d="M27 38 Q32 43 38 38" fill="none" stroke="#60a5fa" stroke-width="3.5" stroke-linecap="round"/>
+    </svg>`,
+
+    // 5. Amazon Redshift (Isometric purple data warehouse chevrons)
+    redshift: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+      <polygon points="32,8 12,19 12,45 32,56 32,43 21,37 21,27 32,21" fill="#8C4FFF"/>
+      <polygon points="32,8 52,19 52,45 32,56 32,43 43,37 43,27 32,21" fill="#693CC5"/>
+      <polygon points="32,23 41,28 41,36 32,41 23,36 23,28" fill="#B794F4"/>
+    </svg>`,
+
+    // 6. Tableau (Iconic multi-colored starburst crosses)
+    tableau: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+      <g stroke-linecap="round">
+        <line x1="32" y1="22" x2="32" y2="42" stroke="#E97627" stroke-width="4.5"/>
+        <line x1="22" y1="32" x2="42" y2="32" stroke="#E97627" stroke-width="4.5"/>
+        <line x1="32" y1="6" x2="32" y2="16" stroke="#C72037" stroke-width="3.5"/>
+        <line x1="27" y1="11" x2="37" y2="11" stroke="#C72037" stroke-width="3.5"/>
+        <line x1="32" y1="48" x2="32" y2="58" stroke="#1F447E" stroke-width="3.5"/>
+        <line x1="27" y1="53" x2="37" y2="53" stroke="#1F447E" stroke-width="3.5"/>
+        <line x1="6" y1="32" x2="16" y2="32" stroke="#2D699B" stroke-width="3.5"/>
+        <line x1="11" y1="27" x2="11" y2="37" stroke="#2D699B" stroke-width="3.5"/>
+        <line x1="48" y1="32" x2="58" y2="32" stroke="#59879B" stroke-width="3.5"/>
+        <line x1="53" y1="27" x2="53" y2="37" stroke="#59879B" stroke-width="3.5"/>
+        <line x1="16" y1="12" x2="16" y2="20" stroke="#F2AF1D" stroke-width="3"/>
+        <line x1="12" y1="16" x2="20" y2="16" stroke="#F2AF1D" stroke-width="3"/>
+        <line x1="48" y1="12" x2="48" y2="20" stroke="#5C6692" stroke-width="3"/>
+        <line x1="44" y1="16" x2="52" y2="16" stroke="#5C6692" stroke-width="3"/>
+        <line x1="16" y1="44" x2="16" y2="52" stroke="#1F447E" stroke-width="3"/>
+        <line x1="12" y1="48" x2="20" y2="48" stroke="#1F447E" stroke-width="3"/>
+        <line x1="48" y1="44" x2="48" y2="52" stroke="#E97627" stroke-width="3"/>
+        <line x1="44" y1="48" x2="52" y2="48" stroke="#E97627" stroke-width="3"/>
+      </g>
+    </svg>`,
+
+    // 7. Microsoft Power BI (Iconic 3 ascending rounded golden columns)
+    powerbi: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+      <rect x="38" y="10" width="13" height="44" rx="5" fill="#E6AD10"/>
+      <rect x="25.5" y="21" width="13" height="33" rx="5" fill="#F2C811"/>
+      <rect x="13" y="32" width="13" height="22" rx="5" fill="#F9E076"/>
+    </svg>`,
+
+    // 8. Looker (Interlocking multi-color BI rings)
+    looker: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+      <circle cx="32" cy="36" r="14" fill="none" stroke="#4285F4" stroke-width="5.5"/>
+      <circle cx="24" cy="18" r="6.5" fill="none" stroke="#EA4335" stroke-width="4.5"/>
+      <circle cx="38" cy="16" r="4.5" fill="none" stroke="#34A853" stroke-width="4"/>
+      <circle cx="45" cy="24" r="4" fill="#FBBC04"/>
+    </svg>`,
+
+    // 9. Palantir (Iconic circle above geometric chevron cradle)
+    palantir: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+      <circle cx="32" cy="25" r="13" fill="none" stroke="#111827" stroke-width="5.5"/>
+      <polyline points="14,44 32,53 50,44" fill="none" stroke="#1129e2" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>`,
+
+    // 10. Elastic / Elasticsearch (Iconic 3 horizontal multi-colored bars)
+    elastic: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+      <path d="M16 14 H44 A7 7 0 0 1 44 26 H16 Z" fill="#FEC514"/>
+      <rect x="12" y="27" width="32" height="10" rx="5" fill="#00BFB3"/>
+      <path d="M16 39 H44 A7 7 0 0 1 44 51 H16 Z" fill="#F04E98"/>
+    </svg>`,
+
+    // 11. OpenAI Enterprise (Iconic hexagonal blossom knot)
+    openai: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+      <g fill="none" stroke="#10A37F" stroke-width="4.2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="32" cy="20" r="10"/>
+        <circle cx="42.4" cy="26" r="10"/>
+        <circle cx="42.4" cy="38" r="10"/>
+        <circle cx="32" cy="44" r="10"/>
+        <circle cx="21.6" cy="38" r="10"/>
+        <circle cx="21.6" cy="26" r="10"/>
+      </g>
+    </svg>`,
+
+    // 12. Anthropic / Claude (Iconic warm terracotta radiant starburst)
+    anthropic: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+      <g stroke="#D97757" stroke-width="4.5" stroke-linecap="round">
+        <line x1="32" y1="9" x2="32" y2="55"/>
+        <line x1="9" y1="32" x2="55" y2="32"/>
+        <line x1="15.5" y1="15.5" x2="48.5" y2="48.5"/>
+        <line x1="48.5" y1="15.5" x2="15.5" y2="48.5"/>
+        <line x1="23" y1="11" x2="41" y2="53"/>
+        <line x1="11" y1="23" x2="53" y2="41"/>
+      </g>
+    </svg>`,
+
+    // 13. Apache Kafka (Iconic distributed streaming cluster graph)
+    kafka: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+      <g stroke="#111827" stroke-width="4.2" fill="none">
+        <line x1="22" y1="32" x2="42" y2="16"/>
+        <line x1="22" y1="32" x2="46" y2="32"/>
+        <line x1="22" y1="32" x2="42" y2="48"/>
+      </g>
+      <circle cx="20" cy="32" r="8" fill="#ffffff" stroke="#111827" stroke-width="4.8"/>
+      <circle cx="44" cy="15" r="6" fill="#ffffff" stroke="#2563EB" stroke-width="4.2"/>
+      <circle cx="48" cy="32" r="6" fill="#ffffff" stroke="#2563EB" stroke-width="4.2"/>
+      <circle cx="44" cy="49" r="6" fill="#ffffff" stroke="#2563EB" stroke-width="4.2"/>
+    </svg>`,
+
+    // 14. SAP ERP (Iconic blue trapezoid with crisp SAP mark)
+    sap: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+      <polygon points="8,18 56,18 42,46 8,46" fill="#008FD3"/>
+      <text x="13" y="37" fill="#FFFFFF" font-family="Inter, Arial, sans-serif" font-weight="900" font-size="14" letter-spacing="0.5">SAP</text>
+    </svg>`,
+
+    // 15. Oracle NetSuite (Iconic Oracle crimson capsule link)
+    oracle: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+      <rect x="10" y="21" width="44" height="22" rx="11" fill="none" stroke="#F80000" stroke-width="6.5"/>
+    </svg>`,
+
+    // 16. ServiceNow (Iconic green ring with inner smile arc)
+    servicenow: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+      <path d="M32 12 A20 20 0 1 1 14 41 A20 20 0 0 1 32 12 Z" fill="none" stroke="#62D84E" stroke-width="6.5"/>
+      <circle cx="32" cy="34" r="6.5" fill="#293E40"/>
+    </svg>`,
+  };
+
+  const map = new Map<string, HTMLImageElement>();
+  for (const [id, rawSvg] of Object.entries(svgs)) {
+    const img = new Image();
+    img.src = svgToDataUrl(rawSvg);
+    map.set(id, img);
+  }
+  return map;
+}
+

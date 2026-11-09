@@ -170,6 +170,9 @@ export class SpiderCabinetEngine {
   private clock = 0;
   private rafId = 0;
   private destroyed = false;
+  private isVisible = true;
+  private observer: IntersectionObserver | null = null;
+  private resizeTimer: number | null = null;
   private isTouch = false;
 
   // Pointer & Fly state
@@ -292,33 +295,48 @@ export class SpiderCabinetEngine {
     this.initSpiderIntro();
     this.bindEvents();
 
-    // Sample anchors on ready & after 600ms
-    this.sampleAnchors();
-    if (document.fonts && document.fonts.ready) {
-      document.fonts.ready.then(() => {
-        if (!this.destroyed) this.sampleAnchors();
-      });
-    }
-    setTimeout(() => {
+    // Sample anchors once layout settles
+    requestAnimationFrame(() => {
       if (!this.destroyed) this.sampleAnchors();
-    }, 600);
+    });
 
     let last = performance.now();
     const tick = (now: number) => {
       if (this.destroyed) return;
+      if (!this.isVisible || document.hidden) {
+        this.rafId = 0;
+        return;
+      }
       const dt = Math.min(0.033, Math.max(0.001, (now - last) / 1000));
       last = now;
       this.step(dt);
       this.draw();
       this.rafId = requestAnimationFrame(tick);
     };
+
+    this.observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (!entry) return;
+        this.isVisible = entry.isIntersecting;
+        if (this.isVisible && !this.rafId && !this.destroyed) {
+          last = performance.now();
+          this.rafId = requestAnimationFrame(tick);
+        }
+      },
+      { threshold: 0.02 }
+    );
+    this.observer.observe(this.canvas);
+
     this.rafId = requestAnimationFrame(tick);
   }
 
   public destroy() {
     this.destroyed = true;
-    cancelAnimationFrame(this.rafId);
+    if (this.rafId) cancelAnimationFrame(this.rafId);
     if (this.holdTimer) clearTimeout(this.holdTimer);
+    if (this.resizeTimer) clearTimeout(this.resizeTimer);
+    this.observer?.disconnect();
     this.unbindEvents();
   }
 
@@ -1075,7 +1093,10 @@ export class SpiderCabinetEngine {
 
   private onResize = () => {
     this.updateSize();
-    this.sampleAnchors();
+    if (this.resizeTimer) clearTimeout(this.resizeTimer);
+    this.resizeTimer = window.setTimeout(() => {
+      if (!this.destroyed) this.sampleAnchors();
+    }, 180);
   };
 
   private bindEvents() {
@@ -1165,12 +1186,6 @@ export class SpiderCabinetEngine {
       item.ox = Math.max(-18, Math.min(18, item.ox + item.vx * dt));
       item.oy = Math.max(-18, Math.min(18, item.oy + item.vy * dt));
 
-      if (Math.abs(item.va) > 0.02 || Math.hypot(item.vx, item.vy) > 0.2) {
-        anyMoving = true;
-        this.needsResample = true;
-        this.resampleTimer = 0.3;
-      }
-
       // Gentle continuous 3D levitation bob so Etsy & all platforms feel alive and weightless
       const floatX = Math.cos(this.clock * 1.15 + idx * 1.8) * 2.5;
       const floatY = Math.sin(this.clock * 1.65 + idx * 1.5) * 5.5;
@@ -1180,16 +1195,7 @@ export class SpiderCabinetEngine {
       const totalX = item.ox + floatX;
       const totalY = item.oy + floatY;
 
-      item.el.style.rotate = `${totalAngle.toFixed(2)}deg`;
-      item.el.style.translate = `${totalX.toFixed(1)}px ${totalY.toFixed(1)}px`;
-    }
-
-    if (!anyMoving && this.needsResample) {
-      this.resampleTimer -= dt;
-      if (this.resampleTimer <= 0) {
-        this.needsResample = false;
-        this.sampleAnchors();
-      }
+      item.el.style.transform = `translate3d(${totalX.toFixed(1)}px, ${totalY.toFixed(1)}px, 0) rotate(${totalAngle.toFixed(2)}deg)`;
     }
   }
 
@@ -2518,24 +2524,18 @@ export class SpiderCabinetEngine {
         // Phase B: Landed Golden Honey Teardrop / Viscous Syrup Drip
         const oozeDist = sp.y - sp.landY;
 
-        // Draw tiny golden companion droplets around the main honey drop using dynamic teardrop/dome rendering
+        // Draw tiny golden companion droplets around the main honey drop using pre-rendered dewSprite
+        ctx.save();
+        ctx.globalAlpha = alpha * 0.92;
         for (let sIdx = 0; sIdx < sp.satellites.length; sIdx++) {
           const sat = sp.satellites[sIdx];
           const satR = Math.max(1.8, sat.r * 1.35);
           const sx = sp.landX + sat.ox;
           const sy = sp.landY + sat.oy;
-          this.drawGoldenTeardrop(
-            ctx,
-            sx,
-            sy - satR * 1.15,
-            sx,
-            sy,
-            satR,
-            alpha * 0.92,
-            sp.rot + sIdx * 1.7,
-            0
-          );
+          const dSize = satR * 3.1;
+          ctx.drawImage(this.dewSprite, sx - dSize * 0.5, sy - dSize * 0.5, dSize, dSize);
         }
+        ctx.restore();
 
         // Render every main honey drop through drawGoldenTeardrop for rich translucent gold gradient + dynamic specular highlights
         const topY = oozeDist > 0.6 ? sp.landY : sp.y - bulbR * 1.32;
@@ -3054,13 +3054,21 @@ export class SpiderCabinetEngine {
 
     octx.restore();
 
-    // Composite spiderOff onto main canvas with dynamic jump shadow (Section 6)
+    // Composite spiderOff onto main canvas with fast GPU-friendly radial drop shadow (zero full-canvas shadowBlur!)
     mainCtx.save();
-    const shadowAlpha = Math.max(0.18, 0.42 - Math.min(0.24, h / 500));
-    mainCtx.shadowColor = `rgba(0, 0, 0, ${shadowAlpha.toFixed(3)})`;
-    mainCtx.shadowBlur = 7 + 0.14 * h;
-    mainCtx.shadowOffsetX = 5 + 0.35 * h;
-    mainCtx.shadowOffsetY = 9 + 0.6 * h;
+    const shadowAlpha = Math.max(0.14, 0.28 - Math.min(0.16, h / 500));
+    const shX = this.sp.x + 5 + 0.35 * h;
+    const shY = this.sp.y + 9 + 0.6 * h;
+    const shR = (165 + h * 0.4) * K;
+    const shGrad = mainCtx.createRadialGradient(shX, shY, shR * 0.1, shX, shY, shR);
+    shGrad.addColorStop(0, `rgba(9, 13, 22, ${shadowAlpha.toFixed(3)})`);
+    shGrad.addColorStop(0.55, `rgba(9, 13, 22, ${(shadowAlpha * 0.45).toFixed(3)})`);
+    shGrad.addColorStop(1, 'rgba(9, 13, 22, 0)');
+    mainCtx.fillStyle = shGrad;
+    mainCtx.beginPath();
+    mainCtx.arc(shX, shY, shR, 0, Math.PI * 2);
+    mainCtx.fill();
+
     mainCtx.drawImage(this.spiderOff, this.sp.x - cx, this.sp.y - cy, cw, ch);
     mainCtx.restore();
   }
