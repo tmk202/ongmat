@@ -118,6 +118,18 @@ export default {
       const q = (url.searchParams.get('q') || '').trim().toLowerCase();
       const limit = Math.min(Math.max(Number(url.searchParams.get('limit')) || 100, 1), 500);
       const order = url.searchParams.get('order') === 'asc' ? 1 : -1;
+      const sortMap = {
+        units_sold_month: 'units_sold_month',
+        units_sold_total: 'units_sold_total',
+        price: 'price',
+        rating: 'rating',
+        revenue: 'revenue',
+      };
+      const sort = sortMap[url.searchParams.get('sort') || 'units_sold_month'] || 'units_sold_month';
+      const valueOf = (row) =>
+        sort === 'revenue'
+          ? (Number(row.units_sold_month) || 0) * (Number(row.price) || 0)
+          : row[sort];
       let rows = Array.isArray(data.rows) ? data.rows : [];
       if (category) {
         const needle = category.toLowerCase();
@@ -129,7 +141,14 @@ export default {
         );
       }
       rows = [...rows]
-        .sort((a, b) => order * ((Number(a.units_sold_month) || 0) - (Number(b.units_sold_month) || 0)))
+        .sort((a, b) => {
+          const av = valueOf(a);
+          const bv = valueOf(b);
+          if (av == null && bv == null) return 0;
+          if (av == null) return 1;
+          if (bv == null) return -1;
+          return order * (Number(av) - Number(bv));
+        })
         .slice(0, limit);
       return json({ ok: true, meta: data.meta, rows });
     }

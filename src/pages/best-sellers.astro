@@ -1,0 +1,397 @@
+---
+import CabinetPage from '../layouts/CabinetPage.astro';
+
+const siteUrl = (Astro.site ?? new URL('https://ecommarketdata.com')).origin;
+const title = 'Best-selling products on Shopee — ecommarketdata';
+const description =
+  'Ranked list of the best-selling products on Shopee, ordered by units sold in the last 30 days. Filter by industry, search a product or sort by revenue, price and rating.';
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebApplication',
+  name: 'Best-selling products on Shopee',
+  url: `${siteUrl}/best-sellers/`,
+  applicationCategory: 'BusinessApplication',
+  operatingSystem: 'Web',
+  isAccessibleForFree: true,
+  description,
+  provider: { '@type': 'Organization', name: 'ecommarketdata', url: `${siteUrl}/` },
+};
+---
+
+<CabinetPage title={title} description={description} jsonLd={jsonLd} wide={true}>
+  <section class="section">
+    <div class="container">
+      <p class="eyebrow">Best sellers</p>
+      <h1>What is selling best on Shopee</h1>
+      <p class="lede">
+        Products ranked from the top down by units sold in the last 30 days. Filter by
+        industry, search a product, or re-rank by total units, revenue, price and rating.
+      </p>
+
+      <div class="dash" id="rank">
+        <div class="dash-toolbar">
+          <div class="dash-search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="m20 20-3.5-3.5"></path>
+            </svg>
+            <input
+              id="f-search"
+              type="search"
+              placeholder="Search product or brand…"
+              autocomplete="off"
+              aria-label="Search products"
+            />
+          </div>
+
+          <label class="dash-field">
+            Rank by
+            <select id="f-sort">
+              <option value="units_sold_month">Units sold / 30 days</option>
+              <option value="units_sold_total">Units sold total</option>
+              <option value="revenue">Estimated revenue / month</option>
+              <option value="price">Price</option>
+              <option value="rating">Rating</option>
+            </select>
+          </label>
+
+          <button class="button button-ghost" id="export" type="button">Export CSV</button>
+        </div>
+
+        <div class="dash-pills" id="industry-pills" role="group" aria-label="Industry filter">
+          <button class="filter-pill active" type="button" data-cat="all">All industries <span>—</span></button>
+        </div>
+
+        <ol class="rank-list" id="rank-list" aria-live="polite"></ol>
+
+        <p class="fine-print" id="status">Loading ranked products…</p>
+      </div>
+    </div>
+  </section>
+</CabinetPage>
+
+<style>
+  .rank-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface);
+    overflow: hidden;
+  }
+
+  .rank-row {
+    display: grid;
+    grid-template-columns: 54px minmax(0, 1fr) 150px 130px 110px;
+    gap: 14px;
+    align-items: center;
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .rank-row:last-child {
+    border-bottom: none;
+  }
+
+  .rank-row:hover {
+    background: rgba(17, 41, 226, 0.03);
+  }
+
+  .rank-no {
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--ink-50);
+    text-align: center;
+  }
+
+  .rank-no.top {
+    display: inline-flex;
+    width: 30px;
+    height: 30px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: #fff;
+    font-size: 0.8rem;
+    margin: 0 auto;
+  }
+
+  .rank-no.gold { background: linear-gradient(135deg, #f4b740, #d98e04); }
+  .rank-no.silver { background: linear-gradient(135deg, #c3cdd8, #8e9aa8); }
+  .rank-no.bronze { background: linear-gradient(135deg, #d9955f, #a45f2c); }
+
+  .rank-main { min-width: 0; }
+
+  .rank-title {
+    display: block;
+    color: var(--blue);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .rank-title:hover { text-decoration: underline; }
+
+  .rank-meta {
+    margin-top: 3px;
+    font-size: 0.75rem;
+    color: var(--ink-50);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .rank-stat {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .rank-stat b {
+    display: block;
+    font-size: 0.95rem;
+    color: var(--blue);
+  }
+
+  .rank-stat span {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-50);
+  }
+
+  .rank-sub {
+    font-size: 0.78rem;
+    color: var(--ink-50);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (max-width: 860px) {
+    .rank-row {
+      grid-template-columns: 44px minmax(0, 1fr) 110px;
+    }
+    .rank-sub { display: none; }
+    .rank-stat.rev { display: none; }
+  }
+
+  @media (max-width: 520px) {
+    .rank-row { grid-template-columns: 40px minmax(0, 1fr) 92px; gap: 10px; padding: 12px; }
+  }
+</style>
+
+<script>
+  type Meta = {
+    snapshot_date: string;
+    platform: string;
+    currency: string | string[];
+    categories: string[];
+  };
+  type CategoryRow = { category_l1: string; items_count: number; units_sold: number };
+  type ItemRow = {
+    item_id: string;
+    title: string;
+    brand: string | null;
+    category_l1: string | null;
+    price: number | null;
+    units_sold_month: number;
+    units_sold_total: number;
+    rating: number | null;
+    stock_total: number | null;
+    item_url: string;
+  };
+
+  const API_BASE =
+    location.hostname === 'localhost' || location.hostname === '127.0.0.1'
+      ? 'http://127.0.0.1:8102/v1'
+      : '/api/v1';
+
+  const $ = <T extends Element>(s: string) => document.querySelector(s) as T | null;
+  const listEl = $('#rank-list');
+  const pillsWrap = $('#industry-pills');
+  const statusEl = $('#status');
+  const searchInput = $<HTMLInputElement>('#f-search');
+  const sortSelect = $<HTMLSelectElement>('#f-sort');
+
+  const state = { category: 'all', query: '', sort: 'units_sold_month' };
+  let meta: Meta | null = null;
+  let categories: CategoryRow[] = [];
+  let items: ItemRow[] = [];
+
+  async function api<T>(path: string): Promise<T> {
+    const res = await fetch(`${API_BASE}${path}`, { headers: { Accept: 'application/json' } });
+    const body = await res.json();
+    if (!res.ok || body.ok === false) {
+      throw new Error(body?.error?.message || `Request failed (${res.status})`);
+    }
+    return body as T;
+  }
+
+  const fmtInt = new Intl.NumberFormat('en-SG');
+  const fmtCompact = new Intl.NumberFormat('en-SG', { notation: 'compact', maximumFractionDigits: 1 });
+  const escapeHtml = (v: string) =>
+    String(v).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string);
+  const fmtPrice = (v: number | null) => {
+    if (v == null) return '—';
+    const currency = Array.isArray(meta?.currency) ? meta?.currency[0] : meta?.currency;
+    try {
+      return new Intl.NumberFormat('en-SG', { style: 'currency', currency: currency || 'VND', maximumFractionDigits: 0 }).format(v);
+    } catch {
+      return fmtInt.format(Math.round(v));
+    }
+  };
+  const revenue = (row: ItemRow) => (Number(row.units_sold_month) || 0) * (Number(row.price) || 0);
+
+  function renderPills() {
+    if (!pillsWrap) return;
+    const total = categories.reduce((s, c) => s + Number(c.units_sold), 0);
+    pillsWrap.innerHTML = `
+      <button class="filter-pill ${state.category === 'all' ? 'active' : ''}" type="button" data-cat="all">
+        All industries <span>${fmtCompact.format(total)}</span>
+      </button>
+      ${categories
+        .map(
+          (c) => `<button class="filter-pill ${state.category === c.category_l1 ? 'active' : ''}" type="button" data-cat="${escapeHtml(c.category_l1)}">
+            ${escapeHtml(c.category_l1)} <span>${fmtCompact.format(Number(c.units_sold))}</span>
+          </button>`
+        )
+        .join('')}`;
+    pillsWrap.querySelectorAll<HTMLButtonElement>('.filter-pill').forEach((pill) => {
+      pill.addEventListener('click', () => {
+        state.category = pill.dataset.cat || 'all';
+        renderPills();
+        load();
+      });
+    });
+  }
+
+  function renderList() {
+    if (!listEl) return;
+    listEl.innerHTML = items
+      .map((item, index) => {
+        const rank = index + 1;
+        const medal = rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : '';
+        return `<li class="rank-row">
+          <div class="rank-no ${medal ? `top ${medal}` : ''}">${rank}</div>
+          <div class="rank-main">
+            <a class="rank-title" href="${escapeHtml(item.item_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.title || 'Untitled')}</a>
+            <div class="rank-meta">${escapeHtml(item.brand || 'No brand')} · ${escapeHtml(item.category_l1 || 'Uncategorised')} · ${fmtPrice(item.price)}</div>
+          </div>
+          <div class="rank-stat">
+            <b>${fmtInt.format(item.units_sold_month ?? 0)}</b>
+            <span>units / 30d</span>
+          </div>
+          <div class="rank-stat rev">
+            <b>${fmtPrice(revenue(item))}</b>
+            <span>est. revenue / mo</span>
+          </div>
+          <div class="rank-sub">
+            ${item.rating ? `${item.rating.toFixed(2)} ★` : '—'}<br />
+            ${fmtInt.format(item.units_sold_total ?? 0)} total
+          </div>
+        </li>`;
+      })
+      .join('');
+  }
+
+  function sortRows(rows: ItemRow[]): ItemRow[] {
+    const key = state.sort as keyof ItemRow | 'revenue';
+    return [...rows].sort((a, b) => {
+      const av = key === 'revenue' ? revenue(a) : (a[key] as number | null);
+      const bv = key === 'revenue' ? revenue(b) : (b[key] as number | null);
+      if (av == null && bv == null) return 0;
+      if (av == null) return 1;
+      if (bv == null) return -1;
+      return Number(bv) - Number(av);
+    });
+  }
+
+  async function load() {
+    const build = (sortKey: string) => {
+      const params = new URLSearchParams({ limit: '100', order: 'desc', sort: sortKey });
+      if (state.category !== 'all') params.set('category', state.category);
+      if (state.query.trim()) params.set('q', state.query.trim());
+      return params;
+    };
+    try {
+      let data: { rows: ItemRow[]; meta?: Meta };
+      let clientSorted = false;
+      try {
+        data = await api<{ rows: ItemRow[]; meta?: Meta }>(`/items?${build(state.sort)}`);
+      } catch (error) {
+        if (state.sort !== 'revenue') throw error;
+        data = await api<{ rows: ItemRow[]; meta?: Meta }>(`/items?${build('units_sold_month')}`);
+        clientSorted = true;
+      }
+      items = clientSorted ? sortRows(data.rows) : data.rows;
+      if (data.meta) meta = data.meta;
+      renderList();
+      if (statusEl) {
+        const cat = state.category === 'all' ? 'all industries' : state.category;
+        statusEl.textContent = `Shopee · ${cat}${state.query ? ` · “${state.query}”` : ''} · top ${items.length} products · snapshot ${meta?.snapshot_date ?? ''}`;
+      }
+    } catch (error) {
+      if (statusEl) statusEl.textContent = `Could not load ranking: ${(error as Error).message}`;
+    }
+  }
+
+  async function boot() {
+    try {
+      const metaRes = await api<{ meta: Meta }>('/meta');
+      meta = metaRes.meta;
+      const catRes = await api<{ rows: CategoryRow[] }>('/categories');
+      categories = catRes.rows;
+      renderPills();
+      await load();
+    } catch (error) {
+      if (statusEl) statusEl.textContent = `Backend unavailable: ${(error as Error).message}`;
+    }
+  }
+
+  let searchTimer: number | undefined;
+  searchInput?.addEventListener('input', () => {
+    window.clearTimeout(searchTimer);
+    searchTimer = window.setTimeout(() => {
+      state.query = searchInput.value;
+      load();
+    }, 220);
+  });
+
+  sortSelect?.addEventListener('change', () => {
+    state.sort = sortSelect.value;
+    load();
+  });
+
+  $<HTMLButtonElement>('#export')?.addEventListener('click', () => {
+    const header = 'rank,item_id,title,brand,category,price,units_sold_month,revenue_month,units_sold_total,rating,url';
+    const lines = items.map((i, idx) =>
+      [
+        idx + 1,
+        i.item_id,
+        `"${String(i.title || '').replace(/"/g, '""')}"`,
+        `"${String(i.brand || '').replace(/"/g, '""')}"`,
+        i.category_l1 || '',
+        i.price ?? '',
+        i.units_sold_month ?? 0,
+        Math.round(revenue(i)),
+        i.units_sold_total ?? 0,
+        i.rating ?? '',
+        i.item_url,
+      ].join(',')
+    );
+    const blob = new Blob([[header, ...lines].join('\n')], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'ecommarketdata-best-sellers.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  boot();
+</script>

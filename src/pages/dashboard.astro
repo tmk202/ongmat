@@ -396,8 +396,9 @@ const jsonLd = {
     if (state.category !== 'all') params.set('category', state.category);
     if (state.query.trim()) params.set('q', state.query.trim());
     try {
-      const data = await api<{ rows: ItemRow[] }>(`/items?${params}`);
+      const data = await api<{ rows: ItemRow[]; meta?: Meta }>(`/items?${params}`);
       items = data.rows;
+      if (data.meta) meta = data.meta;
       renderTable();
       if (status) {
         const cat = state.category === 'all' ? 'all industries' : state.category;
