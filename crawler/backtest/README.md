@@ -77,3 +77,12 @@ adapter. Open questions to settle from captures:
   globally since this item was listed". There is no 30-day field, so
   `units_sold_month` is stored as null for TikTok.
 - Prices are VND integers in `sale_price_decimal` (no ×100000 scaling).
+
+### Sold semantics correction (measured)
+
+Comparing the same 1,000 products from search and PDP shows search
+`sold_count` is much lower than PDP `sold_count` for established listings
+(ratios from 1x to 9000x), and equal for recently launched items. Search is
+therefore the recent (30-day) sold figure, while PDP is lifetime sold. The
+crawler stores search sold as `units_sold_month` and PDP sold as
+`units_sold_total`.

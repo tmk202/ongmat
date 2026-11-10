@@ -93,8 +93,8 @@ test('tiktok embedded state extractor finds products', async () => {
   assert.equal(rows.length, 2);
   assert.equal(rows[0].item_id, '1730001');
   assert.equal(rows[0].price, 189000);
-  assert.equal(rows[0].units_sold_total, 1240);
-  assert.equal(rows[1].units_sold_total, 3120);
+  assert.equal(rows[0].units_sold_month, 1240);
+  assert.equal(rows[1].units_sold_month, 3120);
 });
 
 test('tiktok api payload normalizes nested fields', async () => {
@@ -122,8 +122,8 @@ test('tiktok api payload normalizes nested fields', async () => {
   assert.equal(row.item_id, '1731559750857099289');
   assert.equal(row.price, 279617);
   assert.equal(row.price_original, 499000);
-  assert.equal(row.units_sold_total, 14725);
-  assert.equal(row.units_sold_month, null);
+  assert.equal(row.units_sold_month, 14725);
+  assert.equal(row.units_sold_total, null);
   assert.equal(row.rating, 4.8);
   assert.equal(row.shop_id, '7496022687932450841');
   assert.equal(row.brand, 'KANS');
@@ -217,7 +217,7 @@ test('core payloads keep commercial fields only', async () => {
   };
   const core = coreFromSearch(search, 'serum', 0);
   assert.equal(core.count, 1);
-  assert.equal(core.products[0].sold, 14725);
+  assert.equal(core.products[0].sold_30d, 14725);
   assert.equal(core.products[0].sku_ids.length, 2);
   assert.equal(core.products[0].product_marketing_info, undefined);
   assert.equal(core.products[0].image, 'https://img/1');
