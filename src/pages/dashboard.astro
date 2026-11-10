@@ -28,8 +28,8 @@ const jsonLd = {
       <p class="eyebrow">Dashboard</p>
       <h1>Marketplace sales query</h1>
       <p class="lede">
-        Live marketplace telemetry. Filter by industry or search a product and read units sold,
-        price and stock for the latest snapshot.
+        Live marketplace telemetry. Filter by industry or search a product and read units sold
+        and estimated revenue for the latest snapshot.
       </p>
 
       <div class="dash" id="dash">
@@ -68,16 +68,12 @@ const jsonLd = {
           </button>
         </div>
 
-        <div class="dash-chart">
+        <div class="bars-panel">
           <div class="dash-chart-head">
-            <span id="chart-title">Units sold by month</span>
-            <div class="chart-legend" id="chart-legend"></div>
+            <span>Top products in this list</span>
             <span class="dash-chart-note" id="chart-note"></span>
           </div>
-          <div class="chart-plot">
-            <svg id="chart" viewBox="0 0 900 260" role="img" aria-label="Monthly units sold by industry"></svg>
-            <div class="chart-tip" id="chart-tip" hidden></div>
-          </div>
+          <div class="bars" id="bars"></div>
         </div>
 
         <div class="table-wrap">
@@ -105,27 +101,86 @@ const jsonLd = {
   </section>
 </CabinetPage>
 
+<style>
+  .bars-panel {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface);
+    padding: 16px 18px;
+    margin-bottom: 18px;
+  }
+
+  .bars {
+    display: grid;
+    gap: 10px;
+    margin-top: 12px;
+  }
+
+  .bar-row {
+    display: grid;
+    grid-template-columns: 26px minmax(0, 1fr) minmax(120px, 2fr) 110px;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .bar-rank {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--ink-50);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .bar-label {
+    font-size: 0.8rem;
+    color: var(--blue);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .bar-track {
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(17, 41, 226, 0.07);
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #1129e2, #4a5cf0);
+  }
+
+  .bar-row:nth-child(1) .bar-fill { background: linear-gradient(90deg, #0b1fbf, #1129e2); }
+  .bar-row:nth-child(2) .bar-fill { background: linear-gradient(90deg, #2f48e8, #5a6bf2); }
+  .bar-row:nth-child(3) .bar-fill { background: linear-gradient(90deg, #4a5cf0, #7d8af6); }
+
+  .bar-val {
+    font-size: 0.8rem;
+    color: var(--blue);
+    font-weight: 600;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 720px) {
+    .bar-row { grid-template-columns: 22px minmax(0, 1fr) 96px; }
+    .bar-track { display: none; }
+  }
+</style>
+
 <script>
   type Meta = {
     snapshot_date: string;
-    last_updated: string | null;
     platform: string;
     currency: string | string[];
     categories: string[];
-    totals?: { items_count: number; units_sold: number; gmv_est: number } | null;
   };
   type CategoryRow = { category_l1: string; items_count: number; units_sold: number };
-  type MetricRow = {
-    period: string;
-    category_l1: string;
-    units_sold: number;
-    gmv_est: number;
-    items_count: number;
-    price_index?: number;
-  };
   type ItemRow = {
     item_id: string;
-    shop_id: string;
     title: string;
     brand: string | null;
     category_l1: string | null;
@@ -135,34 +190,30 @@ const jsonLd = {
     rating: number | null;
     stock_total: number | null;
     item_url: string;
-    snapshot_date: string;
   };
+  type SortKey = 'units_sold_month' | 'units_sold_total' | 'revenue' | 'price' | 'rating';
 
   const API_BASE =
     location.hostname === 'localhost' || location.hostname === '127.0.0.1'
       ? 'http://127.0.0.1:8102/v1'
       : '/api/v1';
 
-  const PALETTE = ['#1129e2', '#0aa5c6', '#d946a8', '#7c3aed', '#f59e0b', '#059669', '#dc2626', '#0891b2', '#9333ea'];
-
   const $ = <T extends Element>(selector: string) => document.querySelector(selector) as T | null;
   const searchInput = $<HTMLInputElement>('#f-search');
   const sortSelect = $<HTMLSelectElement>('#f-sort');
   const pillsWrap = $('#industry-pills');
-  const chart = $<SVGSVGElement>('#chart');
+  const barsEl = $('#bars');
   const tbody = $<HTMLTableSectionElement>('#table tbody');
   const status = $('#status');
   const chartNote = $('#chart-note');
-  const tips = $('#chart-tip');
-  const plot = document.querySelector('.chart-plot') as HTMLElement | null;
-  const tip = document.querySelector('#chart-tip') as HTMLElement | null;
 
-  const state = { category: 'all', query: '', sort: 'units_sold_month' };
+  const state: { category: string; query: string; sort: SortKey } = {
+    category: 'all',
+    query: '',
+    sort: 'units_sold_month',
+  };
   let meta: Meta | null = null;
   let categories: CategoryRow[] = [];
-  let monthTotals: MetricRow[] = [];
-  let series: { name: string; values: number[] }[] = [];
-  let months: string[] = [];
   let items: ItemRow[] = [];
 
   async function api<T>(path: string): Promise<T> {
@@ -189,12 +240,38 @@ const jsonLd = {
       return fmtInt.format(Math.round(value));
     }
   };
-  const fmtMonth = (period: string) => {
-    const d = new Date(period);
-    return d.toLocaleDateString('en-SG', { month: 'short', year: 'numeric' });
-  };
   const escapeHtml = (value: string) =>
     String(value).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string);
+
+  const revenue = (row: ItemRow) => (Number(row.units_sold_month) || 0) * (Number(row.price) || 0);
+
+  const METRICS: Record<SortKey, { label: string; value: (row: ItemRow) => number; format: (v: number) => string }> = {
+    units_sold_month: {
+      label: 'Units sold / 30 days',
+      value: (row) => Number(row.units_sold_month) || 0,
+      format: (v) => fmtInt.format(Math.round(v)),
+    },
+    units_sold_total: {
+      label: 'Units sold total',
+      value: (row) => Number(row.units_sold_total) || 0,
+      format: (v) => fmtInt.format(Math.round(v)),
+    },
+    revenue: {
+      label: 'Est. revenue / month',
+      value: revenue,
+      format: (v) => fmtPrice(v),
+    },
+    price: {
+      label: 'Price',
+      value: (row) => Number(row.price) || 0,
+      format: (v) => fmtPrice(v),
+    },
+    rating: {
+      label: 'Rating',
+      value: (row) => Number(row.rating) || 0,
+      format: (v) => v.toFixed(2),
+    },
+  };
 
   function renderPills() {
     if (!pillsWrap) return;
@@ -215,168 +292,29 @@ const jsonLd = {
         state.category = pill.dataset.cat || 'all';
         renderPills();
         loadItems();
-        loadChart();
       });
     });
   }
 
-  function smoothPath(points: { x: number; y: number }[]): string {
-    if (points.length === 0) return '';
-    if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
-    let d = `M ${points[0].x.toFixed(1)} ${points[0].y.toFixed(1)}`;
-    for (let i = 0; i < points.length - 1; i++) {
-      const p0 = points[i - 1] ?? points[i];
-      const p1 = points[i];
-      const p2 = points[i + 1];
-      const p3 = points[i + 2] ?? p2;
-      const c1x = p1.x + (p2.x - p0.x) / 6;
-      const c1y = p1.y + (p2.y - p0.y) / 6;
-      const c2x = p2.x - (p3.x - p1.x) / 6;
-      const c2y = p2.y - (p3.y - p1.y) / 6;
-      d += ` C ${c1x.toFixed(1)} ${c1y.toFixed(1)}, ${c2x.toFixed(1)} ${c2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)}`;
-    }
-    return d;
-  }
-
-  function niceCeil(value: number): number {
-    const pow = Math.pow(10, Math.floor(Math.log10(value || 1)));
-    const n = value / pow;
-    const step = n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10;
-    return step * pow;
-  }
-
-  type Geom = {
-    months: string[];
-    series: { name: string; values: number[] }[];
-    xAt: (i: number) => number;
-    yAt: (v: number) => number;
-    padLeft: number;
-    innerW: number;
-    innerH: number;
-    h: number;
-  };
-  let geom: Geom | null = null;
-
-  function renderChart() {
-    if (!chart) return;
-    const legend = document.querySelector('#chart-legend');
-    if (!months.length) {
-      chart.innerHTML = '';
-      if (legend) legend.innerHTML = '';
-      if (tip) tip.hidden = true;
-      geom = null;
-      return;
-    }
-
-    const w = Math.max(chart.clientWidth, 320);
-    const h = Math.max(chart.clientHeight, 180);
-    chart.setAttribute('viewBox', `0 0 ${w} ${h}`);
-
-    const padLeft = 56;
-    const padRight = 14;
-    const padTop = 14;
-    const padBottom = 30;
-    const innerW = w - padLeft - padRight;
-    const innerH = h - padTop - padBottom;
-
-    const rawMax = Math.max(...series.flatMap((s) => s.values), 1);
-    const max = niceCeil(rawMax);
-
-    const xAt = (i: number) => (months.length === 1 ? padLeft + innerW / 2 : padLeft + (innerW * i) / (months.length - 1));
-    const yAt = (v: number) => padTop + innerH * (1 - v / max);
-    geom = { months, series, xAt, yAt, padLeft, innerW, innerH, h };
-
-    const tickValues = [0, 0.25, 0.5, 0.75, 1].map((r) => max * r);
-    const grid = tickValues
-      .map((value) => {
-        const y = yAt(value);
-        return `<line x1="${padLeft}" y1="${y.toFixed(1)}" x2="${w - padRight}" y2="${y.toFixed(1)}" stroke="rgba(17,41,226,0.08)" stroke-width="1" />
-          <text x="${padLeft - 10}" y="${(y + 3.5).toFixed(1)}" text-anchor="end" font-size="10.5" fill="rgba(17,41,226,0.42)">${fmtCompact.format(value)}</text>`;
-      })
+  function renderBars() {
+    if (!barsEl) return;
+    const metric = METRICS[state.sort];
+    const top = items.slice(0, 8);
+    const max = Math.max(...top.map(metric.value), 1);
+    barsEl.innerHTML = top
+      .map(
+        (item, index) => `<div class="bar-row">
+          <span class="bar-rank">${index + 1}</span>
+          <span class="bar-label" title="${escapeHtml(item.title || '')}">${escapeHtml(item.title || 'Untitled')}</span>
+          <span class="bar-track"><span class="bar-fill" style="display:block;width:${Math.max(4, (metric.value(item) / max) * 100).toFixed(1)}%"></span></span>
+          <span class="bar-val">${metric.format(metric.value(item))}</span>
+        </div>`
+      )
       .join('');
-
-    const slot = months.length > 1 ? innerW / (months.length - 1) : innerW;
-    const step = Math.max(1, Math.ceil(52 / slot));
-    const labels = months
-      .map((month, i) => {
-        if (i % step !== 0 && i !== months.length - 1) return '';
-        return `<text x="${xAt(i).toFixed(1)}" y="${h - 8}" text-anchor="middle" font-size="11" fill="rgba(17,41,226,0.45)">${fmtMonth(month).split(' ')[0]}</text>`;
-      })
-      .join('');
-
-    const lines = series
-      .map((item, index) => {
-        const color = PALETTE[index % PALETTE.length];
-        if (item.values.length === 1) {
-          return `<circle cx="${xAt(0).toFixed(1)}" cy="${yAt(item.values[0]).toFixed(1)}" r="4.5" fill="${color}" stroke="#fff" stroke-width="2" />`;
-        }
-        const points = item.values.map((value, i) => ({ x: xAt(i), y: yAt(value) }));
-        return `<path d="${smoothPath(points)}" fill="none" stroke="${color}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />`;
-      })
-      .join('');
-
-    chart.innerHTML = `
-      <g>${grid}</g>
-      <g>${lines}</g>
-      <line id="chart-guide" x1="0" y1="${padTop}" x2="0" y2="${h - padBottom}" stroke="rgba(17,41,226,0.32)" stroke-width="1" stroke-dasharray="3 3" opacity="0" />
-      <g id="chart-dots"></g>
-      <g>${labels}</g>
-      <rect id="chart-hit" x="${padLeft}" y="${padTop}" width="${innerW}" height="${innerH}" fill="transparent" pointer-events="all" />
-    `;
-
-    if (legend) {
-      legend.innerHTML = series
-        .map((item, index) => `<span class="chart-key"><i style="background:${PALETTE[index % PALETTE.length]}"></i>${escapeHtml(item.name)}</span>`)
-        .join('');
+    if (chartNote) {
+      chartNote.textContent = `${metric.label} · snapshot ${meta?.snapshot_date ?? ''}`;
     }
   }
-
-  function clearHover() {
-    document.querySelector('#chart-guide')?.setAttribute('opacity', '0');
-    const dots = document.querySelector('#chart-dots');
-    if (dots) dots.innerHTML = '';
-    if (tip) tip.hidden = true;
-  }
-
-  function handleHover(event: PointerEvent) {
-    if (!geom || !chart || !tip || !plot) return;
-    const rect = chart.getBoundingClientRect();
-    const ratio = (event.clientX - rect.left - geom.padLeft) / geom.innerW;
-    const index = Math.max(0, Math.min(geom.months.length - 1, Math.round(ratio * (geom.months.length - 1))));
-    const gx = geom.xAt(index);
-    const guide = document.querySelector('#chart-guide');
-    if (guide) {
-      guide.setAttribute('x1', String(gx));
-      guide.setAttribute('x2', String(gx));
-      guide.setAttribute('opacity', '1');
-    }
-    const dots = document.querySelector('#chart-dots');
-    if (dots) {
-      dots.innerHTML = geom.series
-        .map((s, i) => `<circle cx="${gx.toFixed(1)}" cy="${geom!.yAt(s.values[index] ?? 0).toFixed(1)}" r="3.6" fill="${PALETTE[i % PALETTE.length]}" stroke="#fff" stroke-width="1.6" />`)
-        .join('');
-    }
-    tip.innerHTML = `
-      <div class="chart-tip-head">${fmtMonth(geom.months[index])}</div>
-      ${geom.series
-        .map((s, i) => `<div class="chart-tip-row"><i style="background:${PALETTE[i % PALETTE.length]}"></i><span class="name">${escapeHtml(s.name)}</span><span class="val">${fmtInt.format(Math.round(s.values[index] ?? 0))}</span></div>`)
-        .join('')}
-      <div class="chart-tip-unit">units sold</div>`;
-    tip.hidden = false;
-    const plotRect = plot.getBoundingClientRect();
-    const tipW = tip.offsetWidth;
-    const tipH = tip.offsetHeight;
-    let left = event.clientX - plotRect.left + 16;
-    let top = event.clientY - plotRect.top - tipH / 2;
-    if (left + tipW > plotRect.width - 8) left = event.clientX - plotRect.left - tipW - 16;
-    if (left < 8) left = 8;
-    top = Math.max(8, Math.min(top, plotRect.height - tipH - 8));
-    tip.style.left = `${left}px`;
-    tip.style.top = `${top}px`;
-  }
-
-  chart?.addEventListener('pointermove', handleHover);
-  chart?.addEventListener('pointerleave', clearHover);
 
   function renderTable() {
     if (!tbody) return;
@@ -390,7 +328,7 @@ const jsonLd = {
         <td>${escapeHtml(item.category_l1 || '—')}</td>
         <td class="num strong">${fmtInt.format(item.units_sold_month ?? 0)}</td>
         <td class="num dim">${fmtInt.format(item.units_sold_total ?? 0)}</td>
-        <td class="num dim">${fmtPrice((item.units_sold_month ?? 0) * (item.price ?? 0))}</td>
+        <td class="num dim">${fmtPrice(revenue(item))}</td>
         <td class="num dim">${fmtPrice(item.price)}</td>
         <td class="num dim">${item.rating ? item.rating.toFixed(2) : '—'}</td>
       </tr>`
@@ -399,10 +337,7 @@ const jsonLd = {
   }
 
   function sortByRevenue(rows: ItemRow[]): ItemRow[] {
-    return [...rows].sort(
-      (a, b) =>
-        (b.units_sold_month ?? 0) * (b.price ?? 0) - (a.units_sold_month ?? 0) * (a.price ?? 0)
-    );
+    return [...rows].sort((a, b) => revenue(b) - revenue(a));
   }
 
   async function loadItems() {
@@ -424,6 +359,7 @@ const jsonLd = {
       }
       items = clientSorted ? sortByRevenue(data.rows) : data.rows;
       if (data.meta) meta = { ...(meta as Meta), ...data.meta };
+      renderBars();
       renderTable();
       if (status) {
         const cat = state.category === 'all' ? 'all industries' : state.category;
@@ -434,30 +370,6 @@ const jsonLd = {
     }
   }
 
-  async function loadChart() {
-    try {
-      const targets = state.category === 'all' ? categories.map((c) => c.category_l1) : [state.category];
-      const results = await Promise.all(
-        targets.map((cat) => api<{ rows: MetricRow[] }>(`/metrics?granularity=month&category=${encodeURIComponent(cat)}`))
-      );
-      const monthSet = new Set<string>();
-      results.forEach((r) => r.rows.forEach((row) => monthSet.add(row.period)));
-      months = [...monthSet].sort();
-      series = targets.map((cat, i) => {
-        const map = new Map(results[i].rows.map((row) => [row.period, Number(row.units_sold)]));
-        return { name: cat, values: months.map((m) => map.get(m) ?? 0) };
-      });
-      if (chartNote) {
-        chartNote.textContent = months.length
-          ? `${fmtMonth(months[0])} – ${fmtMonth(months[months.length - 1])}`
-          : 'No history yet';
-      }
-      renderChart();
-    } catch (error) {
-      if (status) status.textContent = `Could not load chart: ${(error as Error).message}`;
-    }
-  }
-
   async function boot() {
     try {
       const metaRes = await api<{ meta: Meta }>('/meta');
@@ -465,7 +377,7 @@ const jsonLd = {
       const catRes = await api<{ rows: CategoryRow[] }>('/categories');
       categories = catRes.rows;
       renderPills();
-      await Promise.all([loadChart(), loadItems()]);
+      await loadItems();
     } catch (error) {
       if (status) status.textContent = `Backend unavailable: ${(error as Error).message}`;
     }
@@ -481,20 +393,22 @@ const jsonLd = {
   });
 
   sortSelect?.addEventListener('change', () => {
-    state.sort = sortSelect.value;
+    state.sort = sortSelect.value as SortKey;
     loadItems();
   });
 
   $<HTMLButtonElement>('#export')?.addEventListener('click', () => {
-    const header = 'item_id,title,brand,category,price,units_sold_month,units_sold_total,rating,url';
-    const lines = items.map((i) =>
+    const header = 'rank,item_id,title,brand,category,price,units_sold_month,revenue_month,units_sold_total,rating,url';
+    const lines = items.map((i, idx) =>
       [
+        idx + 1,
         i.item_id,
         `"${String(i.title || '').replace(/"/g, '""')}"`,
         `"${String(i.brand || '').replace(/"/g, '""')}"`,
         i.category_l1 || '',
         i.price ?? '',
         i.units_sold_month ?? 0,
+        Math.round(revenue(i)),
         i.units_sold_total ?? 0,
         i.rating ?? '',
         i.item_url,
@@ -507,12 +421,6 @@ const jsonLd = {
     a.download = 'ecommarketdata-items.csv';
     a.click();
     URL.revokeObjectURL(url);
-  });
-
-  let resizeTimer: number | undefined;
-  window.addEventListener('resize', () => {
-    window.clearTimeout(resizeTimer);
-    resizeTimer = window.setTimeout(() => renderChart(), 150);
   });
 
   const params = new URLSearchParams(location.search);
