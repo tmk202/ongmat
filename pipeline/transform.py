@@ -377,6 +377,11 @@ def aggregate(conn, snapshot_date: str) -> int:
             """,
             (snapshot_date,),
         )
+        # market_items always mirrors the newest snapshot only, so a bad or
+        # stale snapshot can never leak into the published product list.
+        cur.execute(
+            "DELETE FROM market.market_items WHERE snapshot_date <> (SELECT max(snapshot_date) FROM market.silver_items)"
+        )
         cur.execute("DELETE FROM market.data_quality WHERE date=%s AND platform='shopee'", (snapshot_date,))
         cur.execute(
             """

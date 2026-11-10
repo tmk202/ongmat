@@ -71,3 +71,17 @@ Idempotent by `snapshot_date`.
 - Data currently comes from Shopee VN (VND). Currency is surfaced in `/v1/meta`.
 - `category_l1` uses a keyword classifier until a real `market.category_map` is populated.
 - `confidence` is a placeholder until the sold-verification pipeline is wired in.
+
+## Snapshot verification
+
+Before publishing a snapshot, spot-check it against the live collector:
+
+```
+python pipeline/verify.py --snapshot 2026-11-10 --sample 5
+```
+
+It samples items, requests them fresh from the warehouse collector, compares
+rating counts and lifetime sold, writes the result to `market.data_quality`, and
+exits non-zero when fewer than 80% match. `transform.py` also keeps
+`market.market_items` limited to the newest snapshot, so a bad snapshot cannot
+leak into the dashboard.
