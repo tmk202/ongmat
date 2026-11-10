@@ -72,6 +72,7 @@ export function buildHomeJsonLd() {
           temporalCoverage: art.temporalCoverage,
           dateModified: art.lastModified,
           isAccessibleForFree: true,
+          license: `${SITE_ORIGIN}/policy/`,
           creator: { '@id': `${SITE_ORIGIN}/#organization` },
           distribution: {
             '@type': 'DataDownload',
@@ -136,6 +137,7 @@ export function buildDatasetJsonLd(artifact: CuriosityArtifact) {
         temporalCoverage: artifact.temporalCoverage,
         dateModified: artifact.lastModified,
         isAccessibleForFree: true,
+        license: `${SITE_ORIGIN}/policy/`,
         creator: { '@id': `${SITE_ORIGIN}/#organization` },
         includedInDataCatalog: {
           '@type': 'DataCatalog',
