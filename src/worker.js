@@ -43,6 +43,22 @@ export default {
         });
 
       const route = url.pathname;
+      const historyMatch = route.match(/^\/api\/v1\/items\/(\d+)\/history$/);
+      if (historyMatch) {
+        const object = await env.GOLD.get('items/history.json');
+        if (!object) {
+          return json({ ok: false, error: { code: 'NO_DATA', message: 'No snapshot published yet' } }, 503, 'no-store');
+        }
+        let data;
+        try {
+          data = await object.json();
+        } catch {
+          return json({ ok: false, error: { code: 'BAD_DATA', message: 'Published snapshot is unreadable' } }, 500, 'no-store');
+        }
+        const rows = (data.series && data.series[historyMatch[1]]) || [];
+        return json({ ok: true, meta: data.meta, rows });
+      }
+
       const need = route === '/api/v1/items' ? 'items/top.json' : 'metrics/latest.json';
       const metaOnly = route === '/api/v1/meta';
 

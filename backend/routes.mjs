@@ -227,6 +227,22 @@ export function registerRoutes(router) {
     return { ok: true, meta: { platform, rows: rows.length }, rows, next_cursor: nextCursor };
   });
 
+  router.add('GET', '/v1/items/:id/history', async ({ params }) => {
+    const itemId = Number(params.id);
+    if (!Number.isSafeInteger(itemId) || itemId <= 0) {
+      throw new HttpError(400, 'INVALID_PARAM', 'item id must be a positive integer');
+    }
+    const { rows } = await query(
+      `SELECT snapshot_date::text AS date, units_sold_month, units_sold_total,
+              price_min::float8 AS price, rating::float8
+         FROM market.silver_items
+        WHERE platform = 'shopee' AND item_id = $1
+        ORDER BY snapshot_date`,
+      [itemId]
+    );
+    return { ok: true, rows };
+  });
+
   router.add('GET', '/v1/items/:id', async ({ params }) => {
     const itemId = Number(params.id);
     if (!Number.isSafeInteger(itemId) || itemId <= 0) {

@@ -101,6 +101,29 @@ def main() -> int:
                 (args.limit,),
             )
             items = [dict(r) for r in cur.fetchall()]
+
+            ids = [int(r["item_id"]) for r in items]
+            history: dict[str, list[dict]] = {}
+            if ids:
+                cur.execute(
+                    """SELECT item_id::text, snapshot_date::text AS date,
+                              units_sold_month, units_sold_total,
+                              price_min::float8 AS price, rating::float8
+                       FROM market.silver_items
+                       WHERE platform='shopee' AND item_id = ANY(%s)
+                       ORDER BY item_id, snapshot_date""",
+                    (ids,),
+                )
+                for row in cur.fetchall():
+                    history.setdefault(row["item_id"], []).append(
+                        {
+                            "date": row["date"],
+                            "units_sold_month": int(row["units_sold_month"] or 0),
+                            "units_sold_total": int(row["units_sold_total"] or 0),
+                            "price": row["price"],
+                            "rating": row["rating"],
+                        }
+                    )
     finally:
         conn.close()
 
@@ -116,6 +139,7 @@ def main() -> int:
     upload("metrics/latest.json", {"ok": True, "meta": meta, "daily": daily, "monthly": monthly})
     upload("metrics/meta.json", {"ok": True, "meta": meta})
     upload("items/top.json", {"ok": True, "meta": meta, "rows": items})
+    upload("items/history.json", {"ok": True, "meta": meta, "series": history})
     return 0
 
 

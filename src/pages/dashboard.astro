@@ -70,7 +70,8 @@ const jsonLd = {
 
         <div class="bars-panel">
           <div class="dash-chart-head">
-            <span>Top products in this list</span>
+            <span id="chart-title">Top products in this list</span>
+            <button type="button" class="chart-back" id="chart-back" hidden>← Back to list</button>
             <span class="dash-chart-note" id="chart-note"></span>
           </div>
           <div class="bars" id="bars"></div>
@@ -152,6 +153,26 @@ const jsonLd = {
     background: linear-gradient(90deg, #1129e2, #4a5cf0);
   }
 
+  .chart-back {
+    font: inherit;
+    font-size: 0.76rem;
+    color: var(--blue);
+    background: none;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 4px 10px;
+    cursor: pointer;
+    margin-left: 10px;
+  }
+
+  .chart-back:hover { border-color: var(--blue); }
+
+  #table tbody tr { cursor: pointer; }
+  #table tbody tr.is-selected { background: rgba(17, 41, 226, 0.06); }
+
+  .bar-row { cursor: pointer; }
+  .bar-row:hover .bar-label { text-decoration: underline; }
+
   .bar-row:nth-child(1) .bar-fill { background: linear-gradient(90deg, #0b1fbf, #1129e2); }
   .bar-row:nth-child(2) .bar-fill { background: linear-gradient(90deg, #2f48e8, #5a6bf2); }
   .bar-row:nth-child(3) .bar-fill { background: linear-gradient(90deg, #4a5cf0, #7d8af6); }
@@ -206,11 +227,17 @@ const jsonLd = {
   const tbody = $<HTMLTableSectionElement>('#table tbody');
   const status = $('#status');
   const chartNote = $('#chart-note');
+  const chartTitle = $('#chart-title');
+  const chartBack = $<HTMLButtonElement>('#chart-back');
 
-  const state: { category: string; query: string; sort: SortKey } = {
+  type HistoryPoint = { date: string; units_sold_month: number; units_sold_total: number; price: number | null; rating: number | null };
+
+  const state: { category: string; query: string; sort: SortKey; selected: ItemRow | null; history: HistoryPoint[] } = {
     category: 'all',
     query: '',
     sort: 'units_sold_month',
+    selected: null,
+    history: [],
   };
   let meta: Meta | null = null;
   let categories: CategoryRow[] = [];
@@ -296,6 +323,86 @@ const jsonLd = {
     });
   }
 
+  function niceCeil(value: number): number {
+    const pow = Math.pow(10, Math.floor(Math.log10(value || 1)));
+    const n = value / pow;
+    const step = n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10;
+    return step * pow;
+  }
+
+  const fmtDate = (iso: string) => {
+    const d = new Date(iso);
+    return d.toLocaleDateString('en-SG', { day: 'numeric', month: 'short' });
+  };
+
+  function renderHistory() {
+    const item = state.selected;
+    if (!barsEl || !item) return;
+    const points = state.history;
+    if (!points.length) {
+      barsEl.innerHTML = '<p class="fine-print">No history for this product yet. It will appear after the next snapshot.</p>';
+      return;
+    }
+    const w = Math.max(barsEl.clientWidth, 320);
+    const h = 220;
+    const padL = 52;
+    const padR = 14;
+    const padT = 14;
+    const padB = 26;
+    const values = points.map((p) => Number(p.units_sold_month) || 0);
+    const max = niceCeil(Math.max(...values, 1));
+    const xAt = (i: number) => (points.length === 1 ? padL + (w - padL - padR) / 2 : padL + ((w - padL - padR) * i) / (points.length - 1));
+    const yAt = (v: number) => padT + (h - padT - padB) * (1 - v / max);
+    const grid = [0, 0.5, 1]
+      .map((r) => {
+        const v = max * r;
+        const y = yAt(v);
+        return `<line x1="${padL}" y1="${y}" x2="${w - padR}" y2="${y}" stroke="rgba(17,41,226,0.08)" />
+          <text x="${padL - 8}" y="${y + 3.5}" text-anchor="end" font-size="10" fill="rgba(17,41,226,0.45)">${fmtCompact.format(v)}</text>`;
+      })
+      .join('');
+    const path = values.map((v, i) => `${i === 0 ? 'M' : 'L'} ${xAt(i).toFixed(1)} ${yAt(v).toFixed(1)}`).join(' ');
+    const dots = values
+      .map((v, i) => `<circle cx="${xAt(i).toFixed(1)}" cy="${yAt(v).toFixed(1)}" r="4" fill="#1129e2" stroke="#fff" stroke-width="2" />`)
+      .join('');
+    const labels = points
+      .map((p, i) => {
+        const step = Math.max(1, Math.ceil(points.length / 6));
+        if (i % step !== 0 && i !== points.length - 1) return '';
+        return `<text x="${xAt(i).toFixed(1)}" y="${h - 8}" text-anchor="middle" font-size="10.5" fill="rgba(17,41,226,0.5)">${fmtDate(p.date)}</text>`;
+      })
+      .join('');
+    barsEl.innerHTML = `<svg viewBox="0 0 ${w} ${h}" width="100%" height="${h}" role="img" aria-label="Units sold history">${grid}${path}${dots}${labels}</svg>`;
+  }
+
+  async function selectItem(item: ItemRow) {
+    state.selected = item;
+    if (chartTitle) chartTitle.textContent = item.title || 'Product';
+    if (chartBack) chartBack.hidden = false;
+    if (chartNote) chartNote.textContent = 'Units sold / 30 days by snapshot';
+    if (barsEl) barsEl.innerHTML = '<p class="fine-print">Loading history…</p>';
+    try {
+      const data = await api<{ rows: HistoryPoint[] }>(`/items/${item.item_id}/history`);
+      state.history = data.rows;
+    } catch {
+      state.history = [];
+    }
+    renderHistory();
+    tbody?.querySelectorAll('tr').forEach((tr) => tr.classList.remove('is-selected'));
+    items.indexOf(item);
+    const index = items.findIndex((row) => row.item_id === item.item_id);
+    if (index >= 0) tbody?.querySelectorAll('tr')[index]?.classList.add('is-selected');
+  }
+
+  function clearSelection() {
+    state.selected = null;
+    state.history = [];
+    if (chartTitle) chartTitle.textContent = 'Top products in this list';
+    if (chartBack) chartBack.hidden = true;
+    renderBars();
+    tbody?.querySelectorAll('tr').forEach((tr) => tr.classList.remove('is-selected'));
+  }
+
   function renderBars() {
     if (!barsEl) return;
     const metric = METRICS[state.sort];
@@ -303,7 +410,7 @@ const jsonLd = {
     const max = Math.max(...top.map(metric.value), 1);
     barsEl.innerHTML = top
       .map(
-        (item, index) => `<div class="bar-row">
+        (item, index) => `<div class="bar-row" data-index="${index}">
           <span class="bar-rank">${index + 1}</span>
           <span class="bar-label" title="${escapeHtml(item.title || '')}">${escapeHtml(item.title || 'Untitled')}</span>
           <span class="bar-track"><span class="bar-fill" style="display:block;width:${Math.max(4, (metric.value(item) / max) * 100).toFixed(1)}%"></span></span>
@@ -311,6 +418,12 @@ const jsonLd = {
         </div>`
       )
       .join('');
+    barsEl.querySelectorAll<HTMLElement>('.bar-row').forEach((row) => {
+      row.addEventListener('click', () => {
+        const item = items[Number(row.dataset.index)];
+        if (item) selectItem(item);
+      });
+    });
     if (chartNote) {
       chartNote.textContent = `${metric.label} · snapshot ${meta?.snapshot_date ?? ''}`;
     }
@@ -334,6 +447,12 @@ const jsonLd = {
       </tr>`
       )
       .join('');
+    tbody.querySelectorAll<HTMLElement>('tr').forEach((row, index) => {
+      row.addEventListener('click', () => {
+        const item = items[index];
+        if (item) selectItem(item);
+      });
+    });
   }
 
   function sortByRevenue(rows: ItemRow[]): ItemRow[] {
@@ -360,6 +479,7 @@ const jsonLd = {
       }
       items = clientSorted ? sortByRevenue(data.rows) : data.rows;
       if (data.meta) meta = { ...(meta as Meta), ...data.meta };
+      if (state.selected) clearSelection();
       renderBars();
       renderTable();
       if (status) {
@@ -397,6 +517,8 @@ const jsonLd = {
     state.sort = sortSelect.value as SortKey;
     loadItems();
   });
+
+  chartBack?.addEventListener('click', () => clearSelection());
 
   $<HTMLButtonElement>('#export')?.addEventListener('click', () => {
     const header = 'rank,item_id,title,brand,category,price,units_sold_month,revenue_month,units_sold_total,rating,url';
