@@ -10,10 +10,10 @@ function db() {
 
 const memory = { watchlists: [], items: new Map(), nextId: 1 };
 
-export async function createWatchlist({ name, schedule = 'daily' }) {
+export async function createWatchlist({ name, schedule = 'daily', intervalMinutes = 1440 }) {
   const connection = db();
   if (!connection) {
-    const record = { id: memory.nextId++, name, schedule, active: true, last_run_at: null, created_at: new Date().toISOString() };
+    const record = { id: memory.nextId++, name, schedule, interval_minutes: intervalMinutes, active: true, last_run_at: null, created_at: new Date().toISOString() };
     memory.watchlists.push(record);
     memory.items.set(record.id, []);
     return record;
@@ -86,13 +86,15 @@ export async function markWatchlistRun(id) {
 export async function dueWatchlists() {
   const connection = db();
   if (!connection) {
-    const today = new Date().toISOString().slice(0, 10);
-    return memory.watchlists.filter((w) => w.active && (!w.last_run_at || w.last_run_at.slice(0, 10) < today));
+    const now = Date.now();
+    return memory.watchlists.filter(
+      (w) => w.active && (!w.last_run_at || now - new Date(w.last_run_at).getTime() >= (w.interval_minutes || 1440) * 60000)
+    );
   }
   const { rows } = await connection.query(
     `SELECT * FROM crawl.watchlists
       WHERE active = true
-        AND (last_run_at IS NULL OR last_run_at::date < current_date)
+        AND (last_run_at IS NULL OR last_run_at + (interval_minutes || ' minutes')::interval <= now())
       ORDER BY id`
   );
   return rows;

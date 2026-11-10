@@ -23,6 +23,21 @@ test('watchlist stores unique items and can be queued', async () => {
   assert.equal(stored[1].market, 'VN');
 });
 
+test('interval watchlist becomes due after its window', async () => {
+  const { listWatchlists } = await import('../packages/watchlists.js');
+  const watchlist = await createWatchlist({ name: 'two-hour', intervalMinutes: 120 });
+  await addWatchlistItems(watchlist.id, [{ item_id: 4, shop_id: 40 }]);
+  await markWatchlistRun(watchlist.id);
+  expectNotDue: {
+    const due = await dueWatchlists();
+    assert.ok(!due.some((w) => w.id === watchlist.id));
+  }
+  const record = (await listWatchlists()).find((w) => w.id === watchlist.id);
+  record.last_run_at = new Date(Date.now() - 121 * 60000).toISOString();
+  const due = await dueWatchlists();
+  assert.ok(due.some((w) => w.id === watchlist.id));
+});
+
 test('due watchlists run once per day', async () => {
   const watchlist = await createWatchlist({ name: 'daily-check' });
   await addWatchlistItems(watchlist.id, [{ item_id: 3, shop_id: 30 }]);

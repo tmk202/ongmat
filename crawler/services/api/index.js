@@ -79,7 +79,11 @@ export function buildServer() {
   app.post('/v1/watchlists', { preHandler: auth }, async (req, reply) => {
     const body = req.body || {};
     if (!body.name) return reply.code(400).send({ ok: false, error: 'name_required' });
-    const watchlist = await createWatchlist({ name: body.name, schedule: body.schedule || 'daily' });
+    const watchlist = await createWatchlist({
+      name: body.name,
+      schedule: body.schedule || 'daily',
+      intervalMinutes: Number(body.interval_minutes || 1440),
+    });
     return reply.code(201).send({ ok: true, watchlist });
   });
 
