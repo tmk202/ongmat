@@ -101,7 +101,7 @@ const jsonLd = {
   </section>
 </CabinetPage>
 
-<style>
+<style is:global>
   .bars-panel {
     border: 1px solid var(--line);
     border-radius: 14px;
@@ -345,6 +345,7 @@ const jsonLd = {
       const params = new URLSearchParams({ limit: '100', sort: sortKey, order: 'desc' });
       if (state.category !== 'all') params.set('category', state.category);
       if (state.query.trim()) params.set('q', state.query.trim());
+      if (meta?.snapshot_date) params.set('v', meta.snapshot_date);
       return params;
     };
     try {
@@ -374,7 +375,7 @@ const jsonLd = {
     try {
       const metaRes = await api<{ meta: Meta }>('/meta');
       meta = metaRes.meta;
-      const catRes = await api<{ rows: CategoryRow[] }>('/categories');
+      const catRes = await api<{ rows: CategoryRow[] }>(`/categories${meta?.snapshot_date ? `?v=${meta.snapshot_date}` : ''}`);
       categories = catRes.rows;
       renderPills();
       await loadItems();
