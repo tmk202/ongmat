@@ -14,9 +14,11 @@ from __future__ import annotations
 import argparse
 import csv
 import gzip
+import hashlib
 import io
 import json
 import os
+import subprocess
 import sys
 import tempfile
 import urllib.request
@@ -26,7 +28,7 @@ from pathlib import Path
 import pyarrow.csv as pacsv
 import pyarrow as pa
 import psycopg2
-from psycopg2.extras import execute_values
+from psycopg2.extras import RealDictCursor, execute_values
 
 ROOT = Path(__file__).resolve().parent.parent
 ENV_FILE = ROOT / ".env"
@@ -92,6 +94,65 @@ def download_csv(manifest: dict, dest: Path) -> None:
     with urllib.request.urlopen(req, timeout=300) as r, dest.open("wb") as out:
         while chunk := r.read(1 << 20):
             out.write(chunk)
+
+
+def db_manifest(job_id: str) -> dict:
+    """Build a manifest from the warehouse DB instead of the collector API.
+
+    Product files live in R2; the DB is the source of truth for which job,
+    snapshot date and object keys exist.
+    """
+    conn = psycopg2.connect(os.environ["DATABASE_URL"])
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(
+                "SELECT id, name, status, snapshot_date::text AS snapshot_date FROM jobs WHERE id=%s",
+                (job_id,),
+            )
+            job = cur.fetchone()
+            if not job:
+                raise SystemExit(f"Job not found: {job_id}")
+            cur.execute(
+                """SELECT format, object_key, row_count, bytes, sha256
+                   FROM artifacts
+                   WHERE job_id=%s AND format IN ('csv.gz','parquet','jsonl.gz')
+                   ORDER BY (format='csv.gz') DESC, id""",
+                (job_id,),
+            )
+            files = [dict(r) for r in cur.fetchall()]
+            if not files:
+                raise SystemExit(f"Job has no data artifacts: {job_id}")
+            return {
+                "job_id": job_id,
+                "job_name": job["name"],
+                "status": job["status"],
+                "snapshot_date": job["snapshot_date"],
+                "files": files,
+            }
+    finally:
+        conn.close()
+
+
+def download_r2(object_key: str, dest: Path, sha256: str | None) -> None:
+    """Pull one warehouse object from the private R2 bucket via wrangler."""
+    bucket = os.environ.get("SHOPEE_R2_BUCKET", "shopee-output-local")
+    subprocess.run(
+        [
+            "npx", "wrangler", "r2", "object", "get",
+            f"{bucket}/{object_key}",
+            f"--file={dest}",
+            "--remote",
+        ],
+        cwd=ROOT,
+        check=True,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    if sha256:
+        digest = hashlib.sha256(dest.read_bytes()).hexdigest()
+        if digest != sha256:
+            raise SystemExit(f"Checksum mismatch for {object_key}")
+
 
 
 def load_category_map() -> dict[str, str]:
@@ -335,6 +396,11 @@ def main() -> int:
     ap.add_argument("--latest", action="store_true")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--limit", type=int)
+    ap.add_argument(
+        "--from-api",
+        action="store_true",
+        help="Ask the collector API for a download link instead of reading the warehouse DB directly.",
+    )
     args = ap.parse_args()
 
     load_env()
@@ -347,11 +413,17 @@ def main() -> int:
         print("Provide --job-id or --latest", file=sys.stderr)
         return 1
 
-    manifest = api_get(f"/api/jobs/{job_id}/results?format=manifest")
-    job = api_get(f"/api/jobs/{job_id}/parts")
-    snapshot_date = manifest.get("snapshot_date") or job.get("snapshot_date")
+    if args.from_api:
+        manifest = api_get(f"/api/jobs/{job_id}/results?format=manifest")
+        job = api_get(f"/api/jobs/{job_id}/parts")
+        snapshot_date = manifest.get("snapshot_date") or job.get("snapshot_date")
+        print(f"job={job_id} source=collector-api snapshot={snapshot_date}")
+    else:
+        manifest = db_manifest(job_id)
+        snapshot_date = manifest.get("snapshot_date")
+        print(f"job={job_id} source=warehouse-db name={manifest.get('job_name')} snapshot={snapshot_date}")
+
     if not snapshot_date:
-        # snapshot date is stored on the job row; fall back to the DB
         conn = psycopg2.connect(os.environ["DATABASE_URL"])
         try:
             with conn.cursor() as cur:
@@ -360,11 +432,16 @@ def main() -> int:
         finally:
             conn.close()
     snapshot_date = str(snapshot_date)
-    print(f"job={job_id} snapshot={snapshot_date}")
 
     tmpdir = Path(tempfile.mkdtemp(prefix="ecomm-"))
     csv_path = tmpdir / "data.csv.gz"
-    download_csv(manifest, csv_path)
+    artifact = next((f for f in manifest.get("files", []) if f.get("format") == "csv.gz"), None)
+    if not artifact:
+        raise SystemExit("No csv.gz artifact for this job")
+    if artifact.get("url"):
+        download_csv(manifest, csv_path)
+    else:
+        download_r2(artifact["object_key"], csv_path, artifact.get("sha256"))
     rows = normalize(csv_path, snapshot_date, args.limit)
     print(f"silver rows: {len(rows)}")
     if args.dry_run:
