@@ -120,3 +120,26 @@ Runtime rules:
 - `ACCOUNT_LEASE_MS` lease duration; expired lease frees the account.
 - `ACCOUNT_FAIL_LIMIT` consecutive failures before a 120 minute cooldown.
 - Session service returns 503 when no account is leasable.
+
+## Watchlists and scheduling
+
+A watchlist is a fixed SKU list that is crawled again on a schedule, which is
+what produces per-product history.
+
+```bash
+# create watchlist
+curl -X POST localhost:8300/v1/watchlists -H 'Authorization: Bearer dev-token' \
+  -H 'Content-Type: application/json' -d '{"name":"top-vn","schedule":"daily"}'
+
+# add items
+curl -X POST localhost:8300/v1/watchlists/1/items -H 'Authorization: Bearer dev-token' \
+  -H 'Content-Type: application/json' \
+  -d '{"items":[{"item_id":26077143862,"shop_id":1479983524}]}'
+
+# run once now
+curl -X POST localhost:8300/v1/watchlists/1/run -H 'Authorization: Bearer dev-token'
+```
+
+The scheduler queues every active watchlist once per day at `WATCHLIST_HOUR`
+(UTC, default 1 = 08:00 SGT). `WATCHLIST_RUN_ON_START=1` queues immediately on
+boot for testing. Run exactly one scheduler replica.

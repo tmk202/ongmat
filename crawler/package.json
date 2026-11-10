@@ -12,7 +12,8 @@
     "session": "node services/session/index.js",
     "db:postgres": "psql \"$DATABASE_URL\" -f sql/postgres.sql",
     "db:clickhouse": "clickhouse-client --multiquery < sql/clickhouse.sql",
-    "test": "node --test"
+    "test": "node --test",
+    "scheduler": "node services/scheduler/index.js"
   },
   "dependencies": {
     "@clickhouse/client": "^1.7.0",

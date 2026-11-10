@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crawler-scheduler
+  namespace: crawler
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: crawler-scheduler }
+  template:
+    metadata:
+      labels: { app: crawler-scheduler }
+    spec:
+      containers:
+        - name: scheduler
+          image: ghcr.io/OWNER/ecommarketdata-crawler:latest
+          command: ["node", "services/scheduler/index.js"]
+          envFrom:
+            - configMapRef: { name: crawler-config }
+            - secretRef: { name: crawler-secrets }
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { cpu: 250m, memory: 256Mi }

@@ -20,8 +20,11 @@ CREATE TABLE IF NOT EXISTS crawl.watchlists (
   name        text NOT NULL,
   schedule    text NOT NULL DEFAULT 'daily',
   active      boolean NOT NULL DEFAULT true,
+  last_run_at timestamptz,
   created_at  timestamptz NOT NULL DEFAULT now()
 );
+
+ALTER TABLE crawl.watchlists ADD COLUMN IF NOT EXISTS last_run_at timestamptz;
 
 CREATE TABLE IF NOT EXISTS crawl.watchlist_items (
   watchlist_id  bigint NOT NULL REFERENCES crawl.watchlists(id) ON DELETE CASCADE,

@@ -1,9 +1,11 @@
 import Fastify from 'fastify';
-import { config, chunk, log } from '../../packages/config.js';
+import { config, log } from '../../packages/config.js';
 import { bus } from '../../packages/bus.js';
 import { store } from '../../packages/store.js';
 import { cooldownAccount, getAccount, listAccounts, upsertAccount } from '../../packages/accounts.js';
 import { healthSweep, listProxies, upsertProxy } from '../../packages/proxies.js';
+import { enqueueJob } from '../../packages/jobs.js';
+import { addWatchlistItems, createWatchlist, listWatchlistItems, listWatchlists, markWatchlistRun } from '../../packages/watchlists.js';
 
 const auth = async (req, reply) => {
   const header = req.headers.authorization || '';
@@ -37,17 +39,8 @@ export function buildServer() {
     const items = Array.isArray(body.items) ? body.items : [];
     if (!items.length) return reply.code(400).send({ ok: false, error: 'items_required' });
     if (items.length > 500000) return reply.code(400).send({ ok: false, error: 'too_many_items' });
-    const clean = items.map((item) => ({
-      item_id: String(item.item_id),
-      shop_id: String(item.shop_id),
-      market: (item.market || 'VN').toUpperCase(),
-    }));
-    const shards = chunk(clean, config.shardSize);
-    const job = await jobs.createJob({ name: body.name || 'crawl job', total: clean.length, shards: shards.length });
-    for (let index = 0; index < shards.length; index += 1) {
-      await b.publish(config.topicJobs, { job_id: job.id, shard: index, shards: shards.length, items: shards[index] });
-    }
-    log('info', 'job queued', { job_id: job.id, items: clean.length, shards: shards.length });
+    const job = await enqueueJob({ name: body.name || 'crawl job', items });
+    log('info', 'job queued', { job_id: job.id, items: items.length, shards: job.shards });
     return reply.code(202).send({ ok: true, job });
   });
 
@@ -75,6 +68,36 @@ export function buildServer() {
     const minutes = Number(req.body?.minutes || 60);
     await cooldownAccount(account, minutes, 'manual');
     return { ok: true, account: { id: account.id, cooldown_minutes: minutes } };
+  });
+
+  app.get('/v1/watchlists', async () => ({ ok: true, watchlists: await listWatchlists() }));
+
+  app.post('/v1/watchlists', { preHandler: auth }, async (req, reply) => {
+    const body = req.body || {};
+    if (!body.name) return reply.code(400).send({ ok: false, error: 'name_required' });
+    const watchlist = await createWatchlist({ name: body.name, schedule: body.schedule || 'daily' });
+    return reply.code(201).send({ ok: true, watchlist });
+  });
+
+  app.get('/v1/watchlists/:id/items', async (req) => ({
+    ok: true,
+    items: await listWatchlistItems(req.params.id),
+  }));
+
+  app.post('/v1/watchlists/:id/items', { preHandler: auth }, async (req, reply) => {
+    const items = Array.isArray(req.body?.items) ? req.body.items : [];
+    if (!items.length) return reply.code(400).send({ ok: false, error: 'items_required' });
+    const added = await addWatchlistItems(req.params.id, items);
+    return { ok: true, added };
+  });
+
+  app.post('/v1/watchlists/:id/run', { preHandler: auth }, async (req, reply) => {
+    const items = await listWatchlistItems(req.params.id);
+    if (!items.length) return reply.code(400).send({ ok: false, error: 'watchlist_empty' });
+    const job = await enqueueJob({ name: `watchlist ${req.params.id}`, items });
+    await markWatchlistRun(req.params.id);
+    log('info', 'watchlist queued', { watchlist: req.params.id, job_id: job.id, items: items.length });
+    return reply.code(202).send({ ok: true, job });
   });
 
   app.get('/v1/proxies', async () => ({ ok: true, proxies: await listProxies() }));

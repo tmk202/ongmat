@@ -75,6 +75,17 @@ services:
       - clickhouse
       - session
 
+  scheduler:
+    build: .
+    command: node services/scheduler/index.js
+    environment:
+      KAFKA_BROKERS: redpanda:9092
+      DATABASE_URL: postgresql://crawler:crawler@postgres:5432/crawler
+      WATCHLIST_HOUR: "1"
+    depends_on:
+      - redpanda
+      - postgres
+
   session:
     build: .
     command: node services/session/index.js
