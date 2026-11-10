@@ -13,7 +13,8 @@
     "db:postgres": "psql \"$DATABASE_URL\" -f sql/postgres.sql",
     "db:clickhouse": "clickhouse-client --multiquery < sql/clickhouse.sql",
     "test": "node --test",
-    "scheduler": "node services/scheduler/index.js"
+    "scheduler": "node services/scheduler/index.js",
+    "backtest": "node --test backtest/backtest.test.js"
   },
   "dependencies": {
     "@clickhouse/client": "^1.7.0",

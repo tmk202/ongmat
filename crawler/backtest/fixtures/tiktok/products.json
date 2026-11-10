@@ -1,0 +1,9 @@
+{
+  "products": [
+    { "id": "1730001", "shop_id": "90001", "title": "Serum Vitamin C 20ml", "price": 189000, "sold_30d": 1240, "sold_total": 5820, "rating": 4.8, "stock": 320, "category": "Beauty" },
+    { "id": "1730002", "shop_id": "90001", "title": "Kem chống nắng SPF50", "price": 245000, "sold_30d": 860, "sold_total": 3120, "rating": 4.7, "stock": 150, "category": "Beauty" },
+    { "id": "1730003", "shop_id": "90002", "title": "Máy sấy tóc 2000W", "price": 690000, "sold_30d": 320, "sold_total": 1450, "rating": 4.6, "stock": 80, "category": "Electronics" },
+    { "id": "1730004", "shop_id": "90002", "title": "Tai nghe Bluetooth", "price": 390000, "sold_30d": 2100, "sold_total": 9900, "rating": 4.5, "stock": 500, "category": "Electronics" },
+    { "id": "1730005", "shop_id": "90003", "title": "Áo thun cotton unisex", "price": 129000, "sold_30d": 5400, "sold_total": 21000, "rating": 4.9, "stock": 1200, "category": "Fashion" }
+  ]
+}
