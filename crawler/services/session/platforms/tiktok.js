@@ -1,4 +1,5 @@
 import { mapLimit } from '../../../packages/config.js';
+import { saveRaw } from '../../../packages/raw.js';
 
 const BASE = process.env.TIKTOK_BASE || 'https://shop.tiktok.com';
 const SEARCH_PATH = process.env.TIKTOK_SEARCH_PATH || '/vn/s';
@@ -13,7 +14,7 @@ function headers(account) {
   };
 }
 
-function embeddedState(html) {
+export function embeddedState(html) {
   const patterns = [
     /<script[^>]*id="__UNIVERSAL_DATA_FOR_REHYDRATION__"[^>]*>([\s\S]*?)<\/script>/,
     /<script[^>]*id="__MODERN_ROUTER_DATA__"[^>]*>([\s\S]*?)<\/script>/,
@@ -124,6 +125,8 @@ export async function fetchTiktokBatch({ items, account, dispatcher }) {
   await mapLimit(items, Number(process.env.SESSION_CONCURRENCY || 4), async (item) => {
     try {
       const html = await getHtml(`${BASE}${PDP_PATH}/${encodeURIComponent(item.item_id)}`, account, dispatcher);
+      const state = embeddedState(html);
+      await saveRaw({ platform: 'tiktok', kind: 'pdp', key: item.item_id, payload: state || { html } });
       const detail = extractPdp(html);
       if (detail) {
         rows.push(detail);
@@ -226,9 +229,10 @@ export async function searchApi({ keyword, offset = 0, pageToken = null, exclude
   if (!response.ok || payload.code !== 0) {
     throw new Error(`api_error_${payload.code ?? response.status}`);
   }
+  await saveRaw({ platform: 'tiktok', kind: 'search', key: `${keyword}-${offset}`, payload });
   const rows = extractFromApi(payload);
   const nextToken = payload?.data?.fe_config?.data_source?.load_more_params?.page_token || pageToken;
-  return { rows, pageToken: nextToken };
+  return { rows, pageToken: nextToken, raw: payload };
 }
 
 export async function searchAll({ keyword, account, dispatcher, maxPages = 20 }) {

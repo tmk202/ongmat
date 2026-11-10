@@ -171,3 +171,20 @@ test('tiktok pdp extractor reads variants and lifetime sold', async () => {
   assert.equal(row.review_count, 729);
   assert.equal(row.shop_id, '7496022687932450841');
 });
+
+test('raw store keeps the full payload gzipped', async () => {
+  const { mkdtemp, readFile, readdir } = await import('node:fs/promises');
+  const { join } = await import('node:path');
+  const { gunzipSync } = await import('node:zlib');
+  const dir = await mkdtemp(join(tmpdir(), 'raw-'));
+  process.env.RAW_DIR = dir;
+  const { saveRaw } = await import('../packages/raw.js');
+  const payload = { code: 0, data: { products: [{ product_id: '1', title: 'x', skus: [{ stock: 5 }] }] } };
+  const file = await saveRaw({ platform: 'tiktok', kind: 'search', key: 'serum-0', payload });
+  assert.ok(file);
+  const body = JSON.parse(gunzipSync(await readFile(file)).toString('utf8'));
+  assert.equal(body.data.products[0].skus[0].stock, 5);
+  const day = new Date().toISOString().slice(0, 10);
+  const files = await readdir(join(dir, 'tiktok', 'search', day));
+  assert.equal(files.length, 1);
+});

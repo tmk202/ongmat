@@ -1,4 +1,5 @@
 import { mapLimit } from '../../../packages/config.js';
+import { saveRaw } from '../../../packages/raw.js';
 
 const BASE = process.env.SHOPEE_BASE || 'https://shopee.vn';
 
@@ -41,6 +42,7 @@ async function fetchItem(item, account, dispatcher) {
   });
   if (!response.ok) throw new Error(`http_${response.status}`);
   const body = await response.json();
+  await saveRaw({ platform: 'shopee', kind: 'pdp', key: item.item_id, payload: body });
   const product = body?.data?.item;
   if (!product) throw new Error('no_item');
   return normalize(product, item);
