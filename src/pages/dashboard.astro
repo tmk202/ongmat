@@ -167,6 +167,26 @@ const jsonLd = {
 
   .chart-back:hover { border-color: var(--blue); }
 
+  .prod-name { display: inline; }
+  .prod-link {
+    display: inline-flex;
+    vertical-align: -3px;
+    margin-left: 6px;
+    width: 18px;
+    height: 18px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 5px;
+    color: var(--ink-50);
+    border: 1px solid transparent;
+  }
+  .prod-link svg { width: 13px; height: 13px; }
+  .prod-link:hover {
+    color: var(--blue);
+    border-color: var(--line);
+    background: rgba(17, 41, 226, 0.05);
+  }
+
   #table tbody tr { cursor: pointer; }
   #table tbody tr.is-selected { background: rgba(17, 41, 226, 0.06); }
 
@@ -436,7 +456,12 @@ const jsonLd = {
         (item, index) => `
       <tr>
         <td class="rank">${index + 1}</td>
-        <td class="strong"><a href="${escapeHtml(item.item_url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.title || 'Untitled')}</a></td>
+        <td class="strong">
+          <span class="prod-name">${escapeHtml(item.title || 'Untitled')}</span>
+          <a class="prod-link" href="${escapeHtml(item.item_url)}" target="_blank" rel="noopener noreferrer" aria-label="Open product on Shopee" title="Open on Shopee">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 17 17 7"></path><path d="M9 7h8v8"></path></svg>
+          </a>
+        </td>
         <td>${escapeHtml(item.brand || '—')}</td>
         <td>${escapeHtml(item.category_l1 || '—')}</td>
         <td class="num strong">${fmtInt.format(item.units_sold_month ?? 0)}</td>
@@ -452,6 +477,9 @@ const jsonLd = {
         const item = items[index];
         if (item) selectItem(item);
       });
+    });
+    tbody.querySelectorAll<HTMLAnchorElement>('.prod-link').forEach((link) => {
+      link.addEventListener('click', (event) => event.stopPropagation());
     });
   }
 
@@ -482,6 +510,9 @@ const jsonLd = {
       if (state.selected) clearSelection();
       renderBars();
       renderTable();
+      if (items.length) {
+        await selectItem(items[0]);
+      }
       if (status) {
         const cat = state.category === 'all' ? 'all industries' : state.category;
         status.textContent = `Shopee · ${cat}${state.query ? ` · “${state.query}”` : ''} · ${items.length} products · snapshot ${meta?.snapshot_date ?? ''}`;
