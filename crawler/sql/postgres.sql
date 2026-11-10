@@ -39,10 +39,15 @@ CREATE TABLE IF NOT EXISTS crawl.accounts (
   user_agent   text,
   proxy_url    text,
   status       text NOT NULL DEFAULT 'active',
+  success_count bigint NOT NULL DEFAULT 0,
+  fail_count   integer NOT NULL DEFAULT 0,
   last_used_at timestamptz,
   cooldown_until timestamptz,
   created_at   timestamptz NOT NULL DEFAULT now()
 );
+
+ALTER TABLE crawl.accounts ADD COLUMN IF NOT EXISTS success_count bigint NOT NULL DEFAULT 0;
+ALTER TABLE crawl.accounts ADD COLUMN IF NOT EXISTS fail_count integer NOT NULL DEFAULT 0;
 
 CREATE TABLE IF NOT EXISTS crawl.proxies (
   id         bigserial PRIMARY KEY,

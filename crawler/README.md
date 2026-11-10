@@ -87,3 +87,36 @@ workers will not reach Shopee.
 3. Watchlist scheduler: same SKU list crawled daily to build per-product history.
 4. Raw JSON upload to R2 (`@aws-sdk/client-s3`) alongside ClickHouse rows.
 5. Grafana dashboards: success rate, ban rate, Kafka lag, items/sec.
+
+## Accounts and proxies
+
+Accounts live in Postgres, leases and rate limits in Redis (memory fallback for
+local runs). One account maps to one proxy and one browser context.
+
+Add a proxy:
+
+```bash
+curl -X POST localhost:8300/v1/proxies -H 'Authorization: Bearer dev-token' \
+  -H 'Content-Type: application/json' \
+  -d '{"url":"http://user:pass@1.2.3.4:8000","market":"VN"}'
+```
+
+Log in and store an account (opens Chrome with the proxy):
+
+```bash
+node services/session/login.js --label=shopee-vn-01 --proxy=http://user:pass@1.2.3.4:8000
+```
+
+Check account pool:
+
+```bash
+curl localhost:8300/v1/accounts
+curl -X POST localhost:8300/v1/proxies/health -H 'Authorization: Bearer dev-token'
+```
+
+Runtime rules:
+
+- `ACCOUNT_RPM` requests per account per minute.
+- `ACCOUNT_LEASE_MS` lease duration; expired lease frees the account.
+- `ACCOUNT_FAIL_LIMIT` consecutive failures before a 120 minute cooldown.
+- Session service returns 503 when no account is leasable.

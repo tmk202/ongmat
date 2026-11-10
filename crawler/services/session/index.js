@@ -1,39 +1,22 @@
 import Fastify from 'fastify';
+import { ProxyAgent } from 'undici';
 import { config, log, mapLimit } from '../../packages/config.js';
+import { cooldownAccount, leaseAccount, markFailure, markSuccess, releaseAccount } from '../../packages/accounts.js';
 
 const BASE = process.env.SHOPEE_BASE || 'https://shopee.vn';
 
-function accounts() {
-  if (!process.env.SESSION_ACCOUNTS) return [];
-  try {
-    const parsed = JSON.parse(process.env.SESSION_ACCOUNTS);
-    return Array.isArray(parsed) ? parsed.filter((a) => a && a.cookie) : [];
-  } catch {
-    return [];
-  }
+function headers(account, item) {
+  return {
+    'User-Agent': account.user_agent || 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36',
+    Cookie: account.cookie,
+    Referer: `${BASE}/product/${item.shop_id}/${item.item_id}`,
+    'x-api-source': 'pc',
+    'x-shopee-language': account.language || 'vi',
+    Accept: 'application/json',
+  };
 }
 
-function pickAccount(pool, index) {
-  return pool[index % pool.length];
-}
-
-async function fetchItem(item, account) {
-  const url = `${BASE}/api/v4/pdp/get_pc?item_id=${encodeURIComponent(item.item_id)}&shop_id=${encodeURIComponent(item.shop_id)}`;
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': account.userAgent || 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36',
-      Cookie: account.cookie,
-      Referer: `${BASE}/product/${item.shop_id}/${item.item_id}`,
-      'x-api-source': 'pc',
-      'x-shopee-language': account.language || 'vi',
-      Accept: 'application/json',
-    },
-    signal: AbortSignal.timeout(30000),
-  });
-  if (!response.ok) throw new Error(`http_${response.status}`);
-  const body = await response.json();
-  const product = body?.data?.item;
-  if (!product) throw new Error('no_item');
+function normalize(product, item) {
   const rating = product.item_rating || {};
   const observed = new Date();
   const price = Number(product.price || product.price_min || 0) / 100000;
@@ -51,28 +34,65 @@ async function fetchItem(item, account) {
   };
 }
 
+async function fetchItem(item, account, dispatcher) {
+  const url = `${BASE}/api/v4/pdp/get_pc?item_id=${encodeURIComponent(item.item_id)}&shop_id=${encodeURIComponent(item.shop_id)}`;
+  const response = await fetch(url, {
+    headers: headers(account, item),
+    dispatcher,
+    signal: AbortSignal.timeout(Number(process.env.FETCH_TIMEOUT_MS || 30000)),
+  });
+  if (!response.ok) throw new Error(`http_${response.status}`);
+  const body = await response.json();
+  const product = body?.data?.item;
+  if (!product) throw new Error('no_item');
+  return normalize(product, item);
+}
+
+function isAccountError(reason) {
+  return /http_(401|403|429|500|502|503)|verify|no_item/.test(String(reason));
+}
+
 export function buildSessionServer() {
   const app = Fastify({ logger: false });
-  const pool = accounts();
 
-  app.get('/health', async () => ({ ok: true, accounts: pool.length, base: BASE }));
+  app.get('/health', async () => ({ ok: true, base: BASE }));
 
   app.post('/v1/fetch', async (req, reply) => {
-    if (!pool.length) {
-      return reply.code(503).send({ ok: false, error: 'no_accounts_configured' });
-    }
     const items = Array.isArray(req.body?.items) ? req.body.items : [];
     if (!items.length) return reply.code(400).send({ ok: false, error: 'items_required' });
+    const market = items[0].market || 'VN';
+    const account = await leaseAccount({ market });
+    if (!account) return reply.code(503).send({ ok: false, error: 'no_account_available' });
+
+    const dispatcher = account.proxy_url ? new ProxyAgent(account.proxy_url) : undefined;
     const rows = [];
     const errors = [];
-    await mapLimit(items, Number(process.env.SESSION_CONCURRENCY || 8), async (item, index) => {
-      try {
-        rows.push(await fetchItem(item, pickAccount(pool, index)));
-      } catch (error) {
-        errors.push({ item_id: String(item.item_id), shop_id: String(item.shop_id), reason: String(error) });
+    let accountErrors = 0;
+
+    try {
+      await mapLimit(items, Number(process.env.SESSION_CONCURRENCY || 8), async (item) => {
+        try {
+          rows.push(await fetchItem(item, account, dispatcher));
+        } catch (error) {
+          const reason = String(error);
+          errors.push({ item_id: String(item.item_id), shop_id: String(item.shop_id), reason });
+          if (isAccountError(reason)) accountErrors += 1;
+        }
+      });
+
+      if (accountErrors > 0) {
+        await cooldownAccount(account, Number(process.env.BAN_COOLDOWN_MINUTES || 60), 'account_error');
+      } else {
+        await markSuccess(account);
       }
-    });
-    return { ok: true, rows, errors };
+    } catch (error) {
+      await markFailure(account, String(error));
+      log('error', 'session batch failed', { account: account.label, error: String(error) });
+    } finally {
+      await releaseAccount(account);
+    }
+
+    return { ok: true, account: account.label, rows, errors };
   });
 
   return app;
