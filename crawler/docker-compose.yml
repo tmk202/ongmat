@@ -1,0 +1,90 @@
+services:
+  redpanda:
+    image: redpandadata/redpanda:v24.2.7
+    command:
+      - redpanda
+      - start
+      - --smp=1
+      - --memory=1G
+      - --overprovisioned
+      - --node-id=0
+      - --check=false
+      - --kafka-addr=PLAINTEXT://0.0.0.0:9092
+      - --advertise-kafka-addr=PLAINTEXT://redpanda:9092
+    ports:
+      - "9092:9092"
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: crawler
+      POSTGRES_PASSWORD: crawler
+      POSTGRES_DB: crawler
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./sql/postgres.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.8
+    environment:
+      CLICKHOUSE_DB: crawl
+      CLICKHOUSE_USER: crawler
+      CLICKHOUSE_PASSWORD: crawler
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - chdata:/var/lib/clickhouse
+      - ./sql/clickhouse.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+
+  redis:
+    image: redis:7
+    ports:
+      - "6380:6379"
+
+  api:
+    build: .
+    command: node services/api/index.js
+    environment:
+      PORT: 8300
+      KAFKA_BROKERS: redpanda:9092
+      DATABASE_URL: postgresql://crawler:crawler@postgres:5432/crawler
+      SESSION_URL: http://session:8301
+      API_TOKEN: dev-token
+    ports:
+      - "8300:8300"
+    depends_on:
+      - redpanda
+      - postgres
+
+  worker:
+    build: .
+    command: node services/worker/index.js
+    environment:
+      KAFKA_BROKERS: redpanda:9092
+      DATABASE_URL: postgresql://crawler:crawler@postgres:5432/crawler
+      CLICKHOUSE_URL: http://clickhouse:8123
+      SESSION_URL: http://session:8301
+      BATCH_SIZE: 30
+      CONCURRENCY: 16
+      RATE_PER_SECOND: 50
+    depends_on:
+      - redpanda
+      - clickhouse
+      - session
+
+  session:
+    build: .
+    command: node services/session/index.js
+    environment:
+      SESSION_PORT: 8301
+      SHOPEE_BASE: https://shopee.vn
+      SESSION_ACCOUNTS: ${SESSION_ACCOUNTS:-[]}
+    ports:
+      - "8301:8301"
+
+volumes:
+  pgdata:
+  chdata:

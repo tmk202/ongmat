@@ -1,0 +1,89 @@
+# ecommarketdata crawler backend
+
+Crawl backend designed for millions of Shopee SKUs per day.
+
+## Architecture
+
+```
+API (control plane) ──► Redpanda topic crawl.jobs
+                              │
+                     Worker fleet (fetch, batch 30–50)
+                              │  cookies
+                     Session service (account + proxy pool)
+                              │
+                ClickHouse (analytics) + R2 (raw lake)
+                              │
+                     Postgres (jobs, accounts, watchlists)
+```
+
+- **API**: creates jobs, splits items into shards, publishes to Kafka.
+- **Workers**: stateless, consume shards, call the session service in batches,
+  write rows to ClickHouse and counters to Postgres.
+- **Session service**: owns Shopee sessions (cookies, proxies, captcha) and is
+  the only component that talks to Shopee. Browsers are used for login/captcha
+  refresh, not for every item.
+- **Storage**: Postgres holds control data; ClickHouse holds item snapshots
+  (billions of rows); R2 keeps immutable raw JSON.
+
+## Quick start (no Docker)
+
+```bash
+cd crawler
+npm install
+npm run demo
+```
+
+`npm run demo` starts the API and one worker in-process with a mock fetcher,
+queues 500 items, and prints the finished job. Without `KAFKA_BROKERS`,
+`DATABASE_URL`, or `CLICKHOUSE_URL`, the stack automatically falls back to the
+in-memory bus, in-memory store and JSONL sink (`crawler/data/`).
+
+## Full stack (Docker)
+
+```bash
+cd crawler
+cp .env.example .env
+docker compose up -d redpanda postgres clickhouse redis
+docker compose up -d api worker session
+curl -s localhost:8300/health
+```
+
+Create a job:
+
+```bash
+curl -s -X POST localhost:8300/v1/jobs \
+  -H 'Authorization: Bearer dev-token' \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"first run","items":[{"item_id":26077143862,"shop_id":1479983524}]}'
+```
+
+Real crawling requires `SESSION_ACCOUNTS` (JSON array of `{cookie, userAgent,
+language}`) and VN proxies. Without accounts the session service returns 503 and
+workers will not reach Shopee.
+
+## Capacity math
+
+| Target | Design |
+|---|---|
+| 3,000,000 SKU/day | 35 items/sec average |
+| Batch size 30 | ~100,000 requests/day (~1.2 req/sec) |
+| Peak | 10x average, handled by concurrency + worker replicas |
+| Raw data | ~15 GB/day JSON, ~3 GB/day parquet |
+| ClickHouse | ~1.1 B rows/year, partitioned by month |
+
+## Scale-out
+
+- Workers scale horizontally; each shard message is independent and idempotent.
+- Increase `CONCURRENCY` and replicas until the session service becomes the
+  bottleneck (accounts/proxies), then add session replicas.
+- Keep `RATE_PER_SECOND` below the per-account limit; rate limiting is enforced
+  inside the worker process and should be sharded per account as traffic grows.
+- Kafka partition count controls maximum parallelism per topic.
+
+## Roadmap
+
+1. Account login refresh via Playwright (session service).
+2. Proxy rotation and ban detection feeding `crawl.accounts` / `crawl.proxies`.
+3. Watchlist scheduler: same SKU list crawled daily to build per-product history.
+4. Raw JSON upload to R2 (`@aws-sdk/client-s3`) alongside ClickHouse rows.
+5. Grafana dashboards: success rate, ban rate, Kafka lag, items/sec.

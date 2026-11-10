@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crawler-worker
+  namespace: crawler
+spec:
+  replicas: 4
+  selector:
+    matchLabels: { app: crawler-worker }
+  template:
+    metadata:
+      labels: { app: crawler-worker }
+    spec:
+      containers:
+        - name: worker
+          image: ghcr.io/OWNER/ecommarketdata-crawler:latest
+          command: ["node", "services/worker/index.js"]
+          envFrom:
+            - configMapRef: { name: crawler-config }
+            - secretRef: { name: crawler-secrets }
+          resources:
+            requests: { cpu: 200m, memory: 256Mi }
+            limits: { cpu: "1", memory: 1Gi }
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: crawler-worker
+  namespace: crawler
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: crawler-worker
+  minReplicas: 2
+  maxReplicas: 40
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target: { type: Utilization, averageUtilization: 65 }
