@@ -208,12 +208,12 @@ export function extractPdp(html) {
   };
 }
 
-export async function searchApi({ keyword, offset = 0, pageToken = null, excludeIds = [], account, dispatcher }) {
+export async function searchApi({ keyword, offset = 0, pageToken = null, excludeIds = [], account, dispatcher, count = Number(process.env.TIKTOK_SEARCH_COUNT || 200) }) {
   const market = (process.env.TIKTOK_MARKET || 'vn').toLowerCase();
   const body = {
     type: 'search_word',
     component_name: 'feed_list_search_word',
-    count: 30,
+    count,
     request_limit: 10,
     offset,
     load_more_params: {
@@ -245,8 +245,9 @@ export async function searchApi({ keyword, offset = 0, pageToken = null, exclude
 export async function searchAll({ keyword, account, dispatcher, maxPages = 20 }) {
   const seen = new Map();
   let pageToken = null;
+  const pageSize = Number(process.env.TIKTOK_SEARCH_COUNT || 200);
   for (let page = 0; page < maxPages; page += 1) {
-    const offset = page * 30;
+    const offset = page * pageSize;
     const { rows, pageToken: token } = await searchApi({
       keyword,
       offset,
