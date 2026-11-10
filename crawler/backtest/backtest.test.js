@@ -84,8 +84,8 @@ test('tiktok embedded state extractor finds products', async () => {
   const html = `<html><script id="__UNIVERSAL_DATA_FOR_REHYDRATION__" type="application/json">${JSON.stringify({
     data: {
       products: [
-        { product_id: '1730001', title: 'Serum Vitamin C', price: '189.000₫', sold: 1240, shop_id: '90001' },
-        { product_id: '1730002', title: 'Kem chống nắng', price: 245000, sold_30d: 860, sold_total: 3120 },
+        { product_id: '1730001', title: 'Serum Vitamin C', product_price_info: { sale_price_decimal: '189000' }, sold_info: { sold_count: 1240 }, seller_info: { seller_id: '90001' } },
+        { product_id: '1730002', title: 'Kem chống nắng', product_price_info: { sale_price_decimal: '245000' }, sold_info: { sold_count: 3120 }, seller_info: { seller_id: '90002' } },
       ],
     },
   })}</script></html>`;
@@ -93,5 +93,81 @@ test('tiktok embedded state extractor finds products', async () => {
   assert.equal(rows.length, 2);
   assert.equal(rows[0].item_id, '1730001');
   assert.equal(rows[0].price, 189000);
-  assert.equal(rows[1].units_sold_month, 860);
+  assert.equal(rows[0].units_sold_total, 1240);
+  assert.equal(rows[1].units_sold_total, 3120);
+});
+
+test('tiktok api payload normalizes nested fields', async () => {
+  const { extractFromApi } = await import('../services/session/platforms/tiktok.js');
+  const payload = {
+    code: 0,
+    data: {
+      component_data: {
+        products: [
+          {
+            product_id: '1731559750857099289',
+            title: 'KANS Serum',
+            product_price_info: { sale_price_decimal: '279617', origin_price_decimal: '499000' },
+            rate_info: { score: 4.8, review_count: '729' },
+            sold_info: { sold_count: 14725 },
+            seller_info: { seller_id: '7496022687932450841', shop_name: 'Kans Official' },
+            seo_url: { canonical_url: 'https://shop.tiktok.com/vn/pdp/1731559750857099289' },
+            brand_info: { brand_name: 'KANS' },
+          },
+        ],
+      },
+    },
+  };
+  const [row] = extractFromApi(payload);
+  assert.equal(row.item_id, '1731559750857099289');
+  assert.equal(row.price, 279617);
+  assert.equal(row.price_original, 499000);
+  assert.equal(row.units_sold_total, 14725);
+  assert.equal(row.units_sold_month, null);
+  assert.equal(row.rating, 4.8);
+  assert.equal(row.shop_id, '7496022687932450841');
+  assert.equal(row.brand, 'KANS');
+});
+
+test('tiktok pdp extractor reads variants and lifetime sold', async () => {
+  const { extractPdp } = await import('../services/session/platforms/tiktok.js');
+  const state = {
+    loaderData: {
+      page: {
+        page_config: {
+          components_map: [
+            {},
+            {
+              component_data: {
+                product_info: {
+                  product_id: '1731559750857099289',
+                  title: 'KANS Serum',
+                  sold_count: '14725',
+                  price: { min_sku_price: '321.399', max_sku_price: '635.999', original_price: '499.000₫' },
+                  review: { product_rating: 4.8, review_count: '729' },
+                  seller: { seller_id: '7496022687932450841', name: 'Kans Official' },
+                  skus: [
+                    { sku_id: '1', stock: 1319, price: { sale_price_decimal: '321399' } },
+                    { sku_id: '2', stock: 1385, price: { sale_price_decimal: '635999' } },
+                  ],
+                  specifications: [{ name: 'Xuất xứ', value: 'Trung Quốc' }],
+                },
+              },
+            },
+          ],
+        },
+      },
+    },
+  };
+  const html = `<script id="__MODERN_ROUTER_DATA__" type="application/json">${JSON.stringify(state)}</script>`;
+  const row = extractPdp(html);
+  assert.equal(row.item_id, '1731559750857099289');
+  assert.equal(row.price, 321399);
+  assert.equal(row.price_max, 635999);
+  assert.equal(row.units_sold_total, 14725);
+  assert.equal(row.variant_count, 2);
+  assert.equal(row.stock_total, 2704);
+  assert.equal(row.rating, 4.8);
+  assert.equal(row.review_count, 729);
+  assert.equal(row.shop_id, '7496022687932450841');
 });

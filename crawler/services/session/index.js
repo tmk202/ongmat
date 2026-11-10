@@ -3,7 +3,7 @@ import { ProxyAgent } from 'undici';
 import { config, log } from '../../packages/config.js';
 import { cooldownAccount, leaseAccount, markFailure, markSuccess, releaseAccount } from '../../packages/accounts.js';
 import { fetchShopeeBatch } from './platforms/shopee.js';
-import { fetchTiktokBatch, searchTiktok } from './platforms/tiktok.js';
+import { fetchTiktokBatch, searchAll, searchTiktok } from './platforms/tiktok.js';
 
 export function buildSessionServer() {
   const app = Fastify({ logger: false });
@@ -47,9 +47,11 @@ export function buildSessionServer() {
     if (!account) return reply.code(503).send({ ok: false, error: 'no_account_available' });
     const dispatcher = account.proxy_url ? new ProxyAgent(account.proxy_url) : undefined;
     try {
-      const result = await searchTiktok({ keyword, page, account, dispatcher });
+      const result = req.body?.mode === 'html'
+        ? await searchTiktok({ keyword, page, account, dispatcher })
+        : await searchAll({ keyword, account, dispatcher, maxPages: Number(req.body?.maxPages || 20) });
       await markSuccess(account);
-      return { ok: true, account: account.label, ...result };
+      return { ok: true, account: account.label, count: result.rows.length, ...result };
     } catch (error) {
       const reason = String(error);
       if (/challenge_required|http_(401|403|429)/.test(reason)) {

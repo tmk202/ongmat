@@ -1,4 +1,4 @@
-import { extractProducts } from '../services/session/platforms/tiktok.js';
+import { extractProducts, searchAll } from '../services/session/platforms/tiktok.js';
 import { listAccounts } from '../packages/accounts.js';
 
 const args = Object.fromEntries(
@@ -58,4 +58,12 @@ for (const url of urls) {
   } catch (error) {
     console.log(JSON.stringify({ url, error: String(error), ms: Date.now() - started }));
   }
+}
+
+try {
+  const started = Date.now();
+  const result = await searchAll({ keyword, account, maxPages: Number(process.env.MAX_PAGES || 20) });
+  console.log(JSON.stringify({ mode: 'api', count: result.rows.length, uniqueShops: new Set(result.rows.map((r) => r.shop_id)).size, sample: result.rows.slice(0, 3), ms: Date.now() - started }));
+} catch (error) {
+  console.log(JSON.stringify({ mode: 'api', error: String(error) }));
 }

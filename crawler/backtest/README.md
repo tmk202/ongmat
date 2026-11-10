@@ -59,3 +59,21 @@ adapter. Open questions to settle from captures:
 - Are variant prices and stock separate objects?
 - Are vouchers and flash-sale prices in the product payload or a separate call?
 - Is the category a platform taxonomy or free text?
+
+## TikTok VN findings (measured 2026-11-10)
+
+- `shop.tiktok.com` returns a puzzle Security Check for desktop UA and for plain
+  HTTP. A logged-in session plus a **mobile user agent** loads search normally.
+- Search results are server-rendered in `__MODERN_ROUTER_DATA__`; pagination is
+  a JSON API: `POST /api/shop/{market}/brandy/s/product_list`.
+- The API accepts offset paging (30 per call) without the `X-Tts-Oec-Bsid`
+  header when called from a page context with cookies.
+- **Search is capped at roughly 190 products per keyword**: offsets 0–150 return
+  30 items, 180 returns 13, and 210+ return none. `request_limit` does not raise
+  the cap.
+- Product detail lives in `__MODERN_ROUTER_DATA__` on the PDP page and includes
+  SKUs (price, stock), specifications, images, rating and seller.
+- `sold_count` is **lifetime sold**, confirmed by the page note "items sold
+  globally since this item was listed". There is no 30-day field, so
+  `units_sold_month` is stored as null for TikTok.
+- Prices are VND integers in `sale_price_decimal` (no ×100000 scaling).
