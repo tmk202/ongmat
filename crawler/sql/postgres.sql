@@ -63,3 +63,19 @@ CREATE TABLE IF NOT EXISTS crawl.proxies (
   last_ok_at timestamptz,
   created_at timestamptz NOT NULL DEFAULT now()
 );
+
+CREATE TABLE IF NOT EXISTS crawl.raw_objects (
+  id           bigserial PRIMARY KEY,
+  platform     text NOT NULL,
+  kind         text NOT NULL,
+  source_key   text,
+  bucket       text NOT NULL,
+  object_key   text NOT NULL,
+  sha256       char(64) NOT NULL,
+  bytes        integer NOT NULL,
+  captured_at  timestamptz NOT NULL DEFAULT now(),
+  meta         jsonb NOT NULL DEFAULT '{}'::jsonb,
+  UNIQUE (sha256)
+);
+
+CREATE INDEX IF NOT EXISTS raw_objects_lookup_idx ON crawl.raw_objects (platform, kind, captured_at DESC);

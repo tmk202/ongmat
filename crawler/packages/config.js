@@ -1,3 +1,5 @@
+import './env.js';
+
 export const config = {
   port: Number(process.env.PORT || 8300),
   sessionPort: Number(process.env.SESSION_PORT || 8301),
