@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS crawl.watchlist_items (
 CREATE TABLE IF NOT EXISTS crawl.accounts (
   id           bigserial PRIMARY KEY,
   label        text NOT NULL UNIQUE,
+  platform     text NOT NULL DEFAULT 'shopee',
   market       text NOT NULL DEFAULT 'VN',
   cookie       text NOT NULL,
   user_agent   text,
@@ -49,6 +50,7 @@ CREATE TABLE IF NOT EXISTS crawl.accounts (
   created_at   timestamptz NOT NULL DEFAULT now()
 );
 
+ALTER TABLE crawl.accounts ADD COLUMN IF NOT EXISTS platform text NOT NULL DEFAULT 'shopee';
 ALTER TABLE crawl.accounts ADD COLUMN IF NOT EXISTS success_count bigint NOT NULL DEFAULT 0;
 ALTER TABLE crawl.accounts ADD COLUMN IF NOT EXISTS fail_count integer NOT NULL DEFAULT 0;
 

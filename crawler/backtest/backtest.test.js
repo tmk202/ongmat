@@ -78,3 +78,20 @@ test('HAR importer strips headers and decodes base64 bodies', async () => {
   const entries = sanitizeEntries({ log: { entries: [] } });
   assert.equal(entries.length, 0);
 });
+
+test('tiktok embedded state extractor finds products', async () => {
+  const { extractProducts } = await import('../services/session/platforms/tiktok.js');
+  const html = `<html><script id="__UNIVERSAL_DATA_FOR_REHYDRATION__" type="application/json">${JSON.stringify({
+    data: {
+      products: [
+        { product_id: '1730001', title: 'Serum Vitamin C', price: '189.000₫', sold: 1240, shop_id: '90001' },
+        { product_id: '1730002', title: 'Kem chống nắng', price: 245000, sold_30d: 860, sold_total: 3120 },
+      ],
+    },
+  })}</script></html>`;
+  const rows = extractProducts(html);
+  assert.equal(rows.length, 2);
+  assert.equal(rows[0].item_id, '1730001');
+  assert.equal(rows[0].price, 189000);
+  assert.equal(rows[1].units_sold_month, 860);
+});

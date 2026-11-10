@@ -16,9 +16,13 @@ function db() {
 
 const memoryAccounts = [];
 
-function memoryCandidates(market) {
+function memoryCandidates(market, platform) {
   return memoryAccounts.filter(
-    (account) => account.status === 'active' && account.market === market && (!account.cooldown_until || new Date(account.cooldown_until) <= new Date())
+    (account) =>
+      account.status === 'active' &&
+      account.market === market &&
+      (account.platform || 'shopee') === platform &&
+      (!account.cooldown_until || new Date(account.cooldown_until) <= new Date())
   );
 }
 
@@ -27,6 +31,7 @@ export function registerMemoryAccount(account) {
     id: memoryAccounts.length + 1,
     label: account.label,
     market: account.market || 'VN',
+    platform: account.platform || 'shopee',
     cookie: account.cookie,
     user_agent: account.user_agent || null,
     proxy_url: account.proxy_url || null,
@@ -40,24 +45,24 @@ export function registerMemoryAccount(account) {
   return record;
 }
 
-async function candidates(market, limit = 50) {
+async function candidates(market, platform, limit = 50) {
   const connection = db();
-  if (!connection) return memoryCandidates(market).slice(0, limit);
+  if (!connection) return memoryCandidates(market, platform).slice(0, limit);
   const { rows } = await connection.query(
-    `SELECT id, label, market, cookie, user_agent, proxy_url, status, cooldown_until, success_count, fail_count, last_used_at
+    `SELECT id, label, platform, market, cookie, user_agent, proxy_url, status, cooldown_until, success_count, fail_count, last_used_at
        FROM crawl.accounts
-      WHERE market = $1 AND status = 'active'
+      WHERE market = $1 AND platform = $2 AND status = 'active'
         AND (cooldown_until IS NULL OR cooldown_until <= now())
       ORDER BY last_used_at ASC NULLS FIRST
-      LIMIT $2`,
-    [market, limit]
+      LIMIT $3`,
+    [market, platform, limit]
   );
   return rows;
 }
 
-export async function leaseAccount({ market = 'VN' } = {}) {
+export async function leaseAccount({ market = 'VN', platform = 'shopee' } = {}) {
   const store = redis();
-  const list = await candidates(market);
+  const list = await candidates(market, platform);
   for (const account of list) {
     const rateKey = `account:rate:${account.id}`;
     const used = await store.incrWindow(rateKey, RATE_WINDOW_MS);
@@ -128,36 +133,46 @@ export async function getAccount(id) {
   return rows[0] || null;
 }
 
-export async function listAccounts({ market = null } = {}) {
+export async function listAccounts({ market = null, platform = null } = {}) {
   const connection = db();
   if (!connection) {
-    return market ? memoryAccounts.filter((a) => a.market === market) : memoryAccounts;
+    return memoryAccounts.filter((a) => (!market || a.market === market) && (!platform || (a.platform || 'shopee') === platform));
   }
-  const { rows } = market
-    ? await connection.query('SELECT * FROM crawl.accounts WHERE market = $1 ORDER BY id', [market])
-    : await connection.query('SELECT * FROM crawl.accounts ORDER BY id');
+  const filters = [];
+  const params = [];
+  if (market) {
+    params.push(market);
+    filters.push(`market = $${params.length}`);
+  }
+  if (platform) {
+    params.push(platform);
+    filters.push(`platform = $${params.length}`);
+  }
+  const where = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
+  const { rows } = await connection.query(`SELECT * FROM crawl.accounts ${where} ORDER BY id`, params);
   return rows;
 }
 
-export async function upsertAccount({ label, market = 'VN', cookie, user_agent = null, proxy_url = null }) {
+export async function upsertAccount({ label, market = 'VN', cookie, user_agent = null, proxy_url = null, platform = 'shopee' }) {
   const connection = db();
   if (!connection) {
     const existing = memoryAccounts.find((a) => a.label === label);
     if (existing) {
-      Object.assign(existing, { cookie, user_agent, proxy_url, market });
+      Object.assign(existing, { cookie, user_agent, proxy_url, market, platform });
       return existing;
     }
-    return registerMemoryAccount({ label, market, cookie, user_agent, proxy_url });
+    return registerMemoryAccount({ label, market, cookie, user_agent, proxy_url, platform });
   }
   const { rows } = await connection.query(
-    `INSERT INTO crawl.accounts (label, market, cookie, user_agent, proxy_url)
-     VALUES ($1, $2, $3, $4, $5)
+    `INSERT INTO crawl.accounts (label, market, cookie, user_agent, proxy_url, platform)
+     VALUES ($1, $2, $3, $4, $5, $6)
      ON CONFLICT (label) DO UPDATE
        SET cookie = EXCLUDED.cookie, user_agent = EXCLUDED.user_agent,
            proxy_url = EXCLUDED.proxy_url, market = EXCLUDED.market,
+           platform = EXCLUDED.platform,
            status = 'active', cooldown_until = NULL, fail_count = 0
      RETURNING *`,
-    [label, market, cookie, user_agent, proxy_url]
+    [label, market, cookie, user_agent, proxy_url, platform]
   );
   return rows[0];
 }

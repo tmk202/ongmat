@@ -46,7 +46,10 @@ export function buildServer() {
 
   app.get('/v1/accounts', async (req) => ({
     ok: true,
-    accounts: await listAccounts({ market: req.query.market ? String(req.query.market).toUpperCase() : null }),
+    accounts: await listAccounts({
+      market: req.query.market ? String(req.query.market).toUpperCase() : null,
+      platform: req.query.platform ? String(req.query.platform).toLowerCase() : null,
+    }),
   }));
 
   app.post('/v1/accounts', { preHandler: auth }, async (req, reply) => {
@@ -58,6 +61,7 @@ export function buildServer() {
       cookie: body.cookie,
       user_agent: body.user_agent || null,
       proxy_url: body.proxy_url || null,
+      platform: (body.platform || 'shopee').toLowerCase(),
     });
     return reply.code(201).send({ ok: true, account });
   });
