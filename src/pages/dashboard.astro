@@ -49,9 +49,13 @@ const jsonLd = {
           </div>
 
           <label class="dash-field">
-            Platform
-            <select id="f-platform">
-              <option value="shopee">Shopee</option>
+            Rank by
+            <select id="f-sort">
+              <option value="units_sold_month">Units sold / 30 days</option>
+              <option value="units_sold_total">Units sold total</option>
+              <option value="revenue">Estimated revenue / month</option>
+              <option value="price">Price</option>
+              <option value="rating">Rating</option>
             </select>
           </label>
 
@@ -86,6 +90,7 @@ const jsonLd = {
                 <th>Industry</th>
                 <th class="num">Units / mo</th>
                 <th class="num">Units total</th>
+                <th class="num">Est. revenue / mo</th>
                 <th class="num">Price</th>
                 <th class="num">Rating</th>
               </tr>
@@ -142,6 +147,7 @@ const jsonLd = {
 
   const $ = <T extends Element>(selector: string) => document.querySelector(selector) as T | null;
   const searchInput = $<HTMLInputElement>('#f-search');
+  const sortSelect = $<HTMLSelectElement>('#f-sort');
   const pillsWrap = $('#industry-pills');
   const chart = $<SVGSVGElement>('#chart');
   const tbody = $<HTMLTableSectionElement>('#table tbody');
@@ -151,7 +157,7 @@ const jsonLd = {
   const plot = document.querySelector('.chart-plot') as HTMLElement | null;
   const tip = document.querySelector('#chart-tip') as HTMLElement | null;
 
-  const state = { category: 'all', query: '' };
+  const state = { category: 'all', query: '', sort: 'units_sold_month' };
   let meta: Meta | null = null;
   let categories: CategoryRow[] = [];
   let monthTotals: MetricRow[] = [];
@@ -384,6 +390,7 @@ const jsonLd = {
         <td>${escapeHtml(item.category_l1 || '—')}</td>
         <td class="num strong">${fmtInt.format(item.units_sold_month ?? 0)}</td>
         <td class="num dim">${fmtInt.format(item.units_sold_total ?? 0)}</td>
+        <td class="num dim">${fmtPrice((item.units_sold_month ?? 0) * (item.price ?? 0))}</td>
         <td class="num dim">${fmtPrice(item.price)}</td>
         <td class="num dim">${item.rating ? item.rating.toFixed(2) : '—'}</td>
       </tr>`
@@ -391,14 +398,32 @@ const jsonLd = {
       .join('');
   }
 
+  function sortByRevenue(rows: ItemRow[]): ItemRow[] {
+    return [...rows].sort(
+      (a, b) =>
+        (b.units_sold_month ?? 0) * (b.price ?? 0) - (a.units_sold_month ?? 0) * (a.price ?? 0)
+    );
+  }
+
   async function loadItems() {
-    const params = new URLSearchParams({ limit: '100', sort: 'units_sold_month', order: 'desc' });
-    if (state.category !== 'all') params.set('category', state.category);
-    if (state.query.trim()) params.set('q', state.query.trim());
+    const build = (sortKey: string) => {
+      const params = new URLSearchParams({ limit: '100', sort: sortKey, order: 'desc' });
+      if (state.category !== 'all') params.set('category', state.category);
+      if (state.query.trim()) params.set('q', state.query.trim());
+      return params;
+    };
     try {
-      const data = await api<{ rows: ItemRow[]; meta?: Meta }>(`/items?${params}`);
-      items = data.rows;
-      if (data.meta) meta = data.meta;
+      let data: { rows: ItemRow[]; meta?: Meta };
+      let clientSorted = false;
+      try {
+        data = await api<{ rows: ItemRow[]; meta?: Meta }>(`/items?${build(state.sort)}`);
+      } catch (error) {
+        if (state.sort !== 'revenue') throw error;
+        data = await api<{ rows: ItemRow[]; meta?: Meta }>(`/items?${build('units_sold_month')}`);
+        clientSorted = true;
+      }
+      items = clientSorted ? sortByRevenue(data.rows) : data.rows;
+      if (data.meta) meta = { ...(meta as Meta), ...data.meta };
       renderTable();
       if (status) {
         const cat = state.category === 'all' ? 'all industries' : state.category;
@@ -453,6 +478,11 @@ const jsonLd = {
       state.query = searchInput.value;
       loadItems();
     }, 220);
+  });
+
+  sortSelect?.addEventListener('change', () => {
+    state.sort = sortSelect.value;
+    loadItems();
   });
 
   $<HTMLButtonElement>('#export')?.addEventListener('click', () => {
