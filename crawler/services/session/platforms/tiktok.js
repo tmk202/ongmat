@@ -126,7 +126,11 @@ export async function fetchTiktokBatch({ items, account, dispatcher }) {
     try {
       const html = await getHtml(`${BASE}${PDP_PATH}/${encodeURIComponent(item.item_id)}`, account, dispatcher);
       const state = embeddedState(html);
-      await saveRaw({ platform: 'tiktok', kind: 'pdp', key: item.item_id, payload: state || { html } });
+      const core = coreFromPdp(state);
+      await saveRaw({ platform: 'tiktok', kind: 'pdp', key: item.item_id, payload: core || { html } });
+      if (process.env.RAW_FULL === '1' && state) {
+        await saveRaw({ platform: 'tiktok', kind: 'pdp-full', key: item.item_id, payload: state });
+      }
       const detail = extractPdp(html);
       if (detail) {
         rows.push(detail);
@@ -229,7 +233,10 @@ export async function searchApi({ keyword, offset = 0, pageToken = null, exclude
   if (!response.ok || payload.code !== 0) {
     throw new Error(`api_error_${payload.code ?? response.status}`);
   }
-  await saveRaw({ platform: 'tiktok', kind: 'search', key: `${keyword}-${offset}`, payload });
+  await saveRaw({ platform: 'tiktok', kind: 'search', key: `${keyword}-${offset}`, payload: coreFromSearch(payload, keyword, offset) });
+  if (process.env.RAW_FULL === '1') {
+    await saveRaw({ platform: 'tiktok', kind: 'search-full', key: `${keyword}-${offset}`, payload });
+  }
   const rows = extractFromApi(payload);
   const nextToken = payload?.data?.fe_config?.data_source?.load_more_params?.page_token || pageToken;
   return { rows, pageToken: nextToken, raw: payload };
@@ -253,4 +260,43 @@ export async function searchAll({ keyword, account, dispatcher, maxPages = 20 })
     for (const row of rows) seen.set(row.item_id, row);
   }
   return { rows: [...seen.values()], pageToken };
+}
+
+export function coreFromSearch(payload, keyword, offset) {
+  const products = (payload?.data?.component_data?.products || []).map((p) => ({
+    product_id: p.product_id,
+    title: p.title,
+    sale_price: p.product_price_info?.sale_price_decimal,
+    origin_price: p.product_price_info?.origin_price_decimal,
+    currency: p.product_price_info?.currency_name,
+    discount: p.product_price_info?.discount_format || null,
+    sold: p.sold_info?.sold_count ?? null,
+    rating: p.rate_info?.score ?? null,
+    reviews: p.rate_info?.review_count ?? null,
+    seller_id: p.seller_info?.seller_id,
+    shop_name: p.seller_info?.shop_name,
+    brand: p.brand_info?.brand_name || null,
+    sku_ids: (p.sku_info || []).map((x) => x.SkuId),
+    url: p.seo_url?.canonical_url || null,
+    image: p.image?.url_list?.[0] || null,
+  }));
+  return { keyword, offset, captured_at: new Date().toISOString(), count: products.length, products };
+}
+
+export function coreFromPdp(state) {
+  const node = findPdpNode(state);
+  if (!node) return null;
+  return {
+    captured_at: new Date().toISOString(),
+    product_id: node.product_id,
+    title: node.title,
+    sold: node.sold_count,
+    sold_note: node.sold_count_note?.text || null,
+    price: node.price,
+    review: node.review,
+    seller: node.seller ? { seller_id: node.seller.seller_id, name: node.seller.name, rating: node.seller.rating_value, products: node.seller.product_count } : null,
+    skus: (node.skus || []).map((sku) => ({ sku_id: sku.sku_id, stock: sku.stock, price: sku.price, props: sku.sku_sale_props })),
+    specifications: node.specifications || [],
+    images: (node.images || []).slice(0, 3).map((img) => img?.url_list?.[0]).filter(Boolean),
+  };
 }

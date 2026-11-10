@@ -191,3 +191,39 @@ test('raw store keeps the full payload gzipped', async () => {
   const files = await readdir(join(dir, 'tiktok', 'search', `dt=${day}`));
   assert.equal(files.length, 1);
 });
+
+test('core payloads keep commercial fields only', async () => {
+  const { coreFromSearch, coreFromPdp } = await import('../services/session/platforms/tiktok.js');
+  const search = {
+    data: {
+      component_data: {
+        products: [
+          {
+            product_id: '1731559750857099289',
+            title: 'KANS Serum',
+            product_price_info: { sale_price_decimal: '279617', origin_price_decimal: '499000', currency_name: 'VND', discount_format: '44%' },
+            sold_info: { sold_count: 14725 },
+            rate_info: { score: 4.8, review_count: '729' },
+            seller_info: { seller_id: '7496022687932450841', shop_name: 'Kans Official' },
+            brand_info: { brand_name: 'KANS' },
+            sku_info: [{ SkuId: 'a' }, { SkuId: 'b' }],
+            image: { url_list: ['https://img/1'] },
+            seo_url: { canonical_url: 'https://shop.tiktok.com/vn/pdp/x' },
+            product_marketing_info: { huge: 'drop me' },
+          },
+        ],
+      },
+    },
+  };
+  const core = coreFromSearch(search, 'serum', 0);
+  assert.equal(core.count, 1);
+  assert.equal(core.products[0].sold, 14725);
+  assert.equal(core.products[0].sku_ids.length, 2);
+  assert.equal(core.products[0].product_marketing_info, undefined);
+  assert.equal(core.products[0].image, 'https://img/1');
+
+  const pdpState = { loaderData: { x: { product_id: '1', title: 't', sold_count: '5', skus: [{ sku_id: 's', stock: 2, price: { sale_price_decimal: '1' } }], images: [{ url_list: ['https://img/1'] }, { url_list: ['https://img/2'] }], specifications: [{ name: 'a', value: 'b' }], seller: { seller_id: '9', name: 'shop' }, price: {}, review: {} } } };
+  const pdp = coreFromPdp(pdpState);
+  assert.equal(pdp.skus.length, 1);
+  assert.equal(pdp.images.length, 2);
+});

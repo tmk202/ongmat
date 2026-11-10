@@ -42,7 +42,10 @@ async function fetchItem(item, account, dispatcher) {
   });
   if (!response.ok) throw new Error(`http_${response.status}`);
   const body = await response.json();
-  await saveRaw({ platform: 'shopee', kind: 'pdp', key: item.item_id, payload: body });
+  await saveRaw({ platform: 'shopee', kind: 'pdp', key: item.item_id, payload: coreFromShopee(body) });
+  if (process.env.RAW_FULL === '1') {
+    await saveRaw({ platform: 'shopee', kind: 'pdp-full', key: item.item_id, payload: body });
+  }
   const product = body?.data?.item;
   if (!product) throw new Error('no_item');
   return normalize(product, item);
@@ -66,4 +69,29 @@ export async function fetchShopeeBatch({ items, account, dispatcher }) {
     }
   });
   return { rows, errors, accountErrors };
+}
+
+export function coreFromShopee(body) {
+  const product = body?.data?.item || {};
+  return {
+    captured_at: new Date().toISOString(),
+    item_id: product.itemid,
+    shop_id: product.shopid,
+    name: product.name,
+    brand: product.brand || null,
+    price: product.price,
+    price_min: product.price_min,
+    price_max: product.price_max,
+    price_before: product.price_before_discount || product.price_min_before_discount || null,
+    sold: product.sold,
+    historical_sold: product.historical_sold,
+    rating: product.item_rating?.rating_star ?? null,
+    rating_count: product.item_rating?.rating_count || null,
+    stock: product.stock,
+    catid: product.catid,
+    tier_variations: product.tier_variations || [],
+    image: product.image || null,
+    shop_location: product.shop_location || null,
+    currency: product.currency || null,
+  };
 }

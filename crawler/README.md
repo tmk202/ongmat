@@ -143,3 +143,16 @@ curl -X POST localhost:8300/v1/watchlists/1/run -H 'Authorization: Bearer dev-to
 The scheduler queues every active watchlist once per day at `WATCHLIST_HOUR`
 (UTC, default 1 = 08:00 SGT). `WATCHLIST_RUN_ON_START=1` queues immediately on
 boot for testing. Run exactly one scheduler replica.
+
+## Raw retention policy
+
+Only commercial fields are kept by default. Each capture stores a canonical
+"core" object (ids, price, sold, rating, stock, variants, seller, url), which is
+enough to reproduce any published metric.
+
+- `RAW_FULL=1` also stores the original payload under `*-full` kinds, intended
+  for debugging and parser changes with a short retention window (30–90 days).
+- Never stored: request headers, cookies, tracking beacons, ad labels and
+  analytics payloads.
+- Objects are content addressed (`sha256`), immutable, and indexed in
+  `crawl.raw_objects`, which is the lineage record for every published number.
