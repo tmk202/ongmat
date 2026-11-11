@@ -29,14 +29,13 @@ if (!label) {
 
 const proxy = parseProxy(args.proxy);
 const profileDir = args.profileDir || process.env.CHROME_PROFILE_DIR || join(fileURLToPath(new URL('../..', import.meta.url)), '.chrome-tiktok');
-const browser = await chromium.launch({
+const context = await chromium.launchPersistentContext(profileDir, {
   channel: process.env.CHROME_CHANNEL || 'chrome',
   headless: false,
   proxy,
-  userDataDir: profileDir,
+  locale: 'vi-VN',
 });
-const context = await browser.newContext({ locale: 'vi-VN' });
-const page = await context.newPage();
+const page = context.pages()[0] || (await context.newPage());
 const startUrl = platform === 'tiktok'
   ? (process.env.TIKTOK_BASE || 'https://shop.tiktok.com') + '/vn'
   : (process.env.SHOPEE_BASE || 'https://shopee.vn');
@@ -54,10 +53,10 @@ const loggedIn = platform === 'tiktok'
   : cookie.includes('SPC_F') || cookie.includes('SPC_U');
 if (!loggedIn) {
   console.error(`Không thấy cookie đăng nhập của ${platform}. Kiểm tra lại.`);
-  await browser.close();
+  await context.close();
   process.exit(1);
 }
 
 const account = await upsertAccount({ label, market, platform, cookie, user_agent: userAgent, proxy_url: args.proxy || null });
 console.log(JSON.stringify({ ok: true, account: { id: account.id, label: account.label, market: account.market, cookies: cookies.length }, profile: profileDir }));
-await browser.close();
+await context.close();
