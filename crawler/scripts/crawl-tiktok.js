@@ -1,7 +1,7 @@
 import { readFile, appendFile, mkdir, writeFile, access } from 'node:fs/promises';
 import { join } from 'node:path';
-import { ProxyAgent } from 'undici';
-import { extractPdp } from '../services/session/platforms/tiktok.js';
+import { extractPdp, embeddedState } from '../services/session/platforms/tiktok.js';
+import { saveRaw } from '../packages/raw.js';
 import { listAccounts } from '../packages/accounts.js';
 
 const args = Object.fromEntries(
@@ -14,7 +14,8 @@ const args = Object.fromEntries(
 const mode = args.mode || 'pdp';
 const mock = args.mock === '1';
 const limit = Number(args.limit || 0);
-const concurrency = Number(args.concurrency || 6);
+const concurrency = Number(args.concurrency || 4);
+const itemDelayMs = Number(process.env.ITEM_DELAY_MS || 250);
 const retries = Number(args.retries || 2);
 const runId = args.run || new Date().toISOString().replace(/[:.]/g, '-');
 const runDir = join(process.env.DATA_DIR || new URL('../data', import.meta.url).pathname, 'runs', runId);
@@ -50,21 +51,29 @@ async function readJsonl(path) {
 }
 
 const account = await loadCookie();
-const dispatcher = account.proxy_url ? new ProxyAgent(account.proxy_url) : undefined;
+const dispatcher = account.proxy_url ? new (await import('undici')).ProxyAgent(account.proxy_url) : undefined;
 const headers = { 'User-Agent': account.user_agent || 'Mozilla/5.0', Cookie: account.cookie || '', Accept: 'text/html', 'Accept-Encoding': 'identity' };
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+let debugOnce = false;
 async function fetchHtml(url) {
   for (let attempt = 0; attempt <= retries; attempt += 1) {
     try {
       const response = await fetch(url, { headers, dispatcher, signal: AbortSignal.timeout(Number(process.env.FETCH_TIMEOUT_MS || 20000)) });
-      if (response.status === 429 || response.status === 403) throw new Error(`http_${response.status}`);
+      if ([301, 302, 307, 308].includes(response.status)) {
+        await sleep(3000 * (attempt + 1));
+        throw new Error(`soft_block_${response.status}`);
+      }
+      if (response.status === 429 || response.status === 403) {
+        await sleep(10000 * (attempt + 1));
+        throw new Error(`http_${response.status}`);
+      }
       if (!response.ok) throw new Error(`http_${response.status}`);
       return response.text();
     } catch (error) {
       if (attempt === retries) throw error;
-      await sleep(300 * (attempt + 1));
+      await sleep(1500 * (attempt + 1));
     }
   }
 }
@@ -130,7 +139,7 @@ const outPath = join(runDir, 'items.jsonl');
 const doneRows = await readJsonl(outPath);
 const doneIds = new Set(doneRows.map((row) => String(row.item_id)));
 const pending = items.filter((item) => !doneIds.has(String(item.item_id)));
-await log('pdp_start', { total: items.length, done: doneIds.size, pending: pending.length, concurrency, mock });
+await log('pdp_start', { total: items.length, done: doneIds.size, pending: pending.length, concurrency, mock, label: account.label, cookie_len: (account.cookie || '').length, ua: (account.user_agent || '').slice(0, 40) });
 
 let ok = 0; let missing = 0; let failed = 0; let challenges = 0; let added = 0;
 let index = 0;
@@ -142,6 +151,7 @@ async function worker() {
     const i = index++;
     if (i >= pending.length) return;
     const item = pending[i];
+    await sleep(itemDelayMs * (i % Math.max(concurrency, 1)));
     try {
       if (mock) {
         const row = { item_id: String(item.item_id), shop_id: String(item.shop_id), title: `mock ${item.item_id}`, price: 1000 + (Number(item.item_id) % 500), sold: Number(item.item_id) % 10000, rating: 4.5, stock: 100, variants: 1, observed_at: new Date().toISOString() };
@@ -150,6 +160,9 @@ async function worker() {
       } else {
         const html = await fetchHtml(`https://shop.tiktok.com/vn/pdp/${encodeURIComponent(item.item_id)}`);
         if (/Security Check|Verify to continue/i.test(html)) { challenges += 1; throw new Error('challenge'); }
+        if (process.env.RAW_FULL === '1') {
+          await saveRaw({ platform: 'tiktok', kind: 'pdp-full', key: item.item_id, payload: embeddedState(html) || { html } });
+        }
         const row = extractPdp(html);
         if (!row) { missing += 1; throw new Error('no_state'); }
         await appendFile(outPath, JSON.stringify(row) + '\n');
