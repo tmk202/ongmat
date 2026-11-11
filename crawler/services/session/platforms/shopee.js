@@ -11,6 +11,7 @@ function headers(account, item) {
     'x-api-source': 'pc',
     'x-shopee-language': account.language || 'vi',
     Accept: 'application/json',
+    'Accept-Encoding': 'identity',
   };
 }
 

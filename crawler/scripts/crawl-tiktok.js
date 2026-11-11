@@ -51,7 +51,7 @@ async function readJsonl(path) {
 
 const account = await loadCookie();
 const dispatcher = account.proxy_url ? new ProxyAgent(account.proxy_url) : undefined;
-const headers = { 'User-Agent': account.user_agent || 'Mozilla/5.0', Cookie: account.cookie || '', Accept: 'text/html' };
+const headers = { 'User-Agent': account.user_agent || 'Mozilla/5.0', Cookie: account.cookie || '', Accept: 'text/html', 'Accept-Encoding': 'identity' };
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -83,14 +83,21 @@ if (mode === 'discover') {
   let added = 0;
   const started = Date.now();
   await log('discover_start', { keywords: keywords.length, have: seen.size });
+  await fetch('https://shop.tiktok.com/vn?enter_method=direct', { headers, dispatcher, signal: AbortSignal.timeout(30000) }).catch(() => {});
   for (const keyword of keywords) {
     done += 1;
     try {
       const body = { type: 'search_word', component_name: 'feed_list_search_word', count: 200, request_limit: 10, offset: 0, load_more_params: { search_word: keyword, page_token: '', exclude_product_ids: [] } };
-      const response = await fetch('https://shop.tiktok.com/api/shop/vn/brandy/s/product_list', { method: 'POST', headers: { ...headers, 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(body), dispatcher, signal: AbortSignal.timeout(30000) });
-      const payload = await response.json();
+      const response = await fetch('https://shop.tiktok.com/api/shop/vn/brandy/s/product_list', { method: 'POST', headers: { ...headers, 'Content-Type': 'application/json', Accept: 'application/json', 'Accept-Encoding': 'identity' }, body: JSON.stringify(body), dispatcher, signal: AbortSignal.timeout(30000) });
+      let payload = await response.json();
       if (payload.code !== 0) throw new Error(`api_code_${payload.code}`);
-      const products = payload?.data?.component_data?.products || [];
+      let products = payload?.data?.component_data?.products || [];
+      if (!products.length) {
+        await new Promise((resolve) => setTimeout(resolve, 800));
+        const retry = await fetch('https://shop.tiktok.com/api/shop/vn/brandy/s/product_list', { method: 'POST', headers: { ...headers, 'Content-Type': 'application/json', Accept: 'application/json', 'Accept-Encoding': 'identity' }, body: JSON.stringify(body), dispatcher, signal: AbortSignal.timeout(30000) });
+        payload = await retry.json();
+        products = payload?.data?.component_data?.products || [];
+      }
       const lines = [];
       for (const product of products) {
         const id = String(product.product_id);
