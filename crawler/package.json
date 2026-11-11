@@ -14,7 +14,8 @@
     "db:clickhouse": "clickhouse-client --multiquery < sql/clickhouse.sql",
     "test": "node --test",
     "scheduler": "node services/scheduler/index.js",
-    "backtest": "node --test backtest/backtest.test.js"
+    "backtest": "node --test backtest/backtest.test.js",
+    "crawl": "node scripts/crawl-tiktok.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1165.0",

@@ -2,6 +2,8 @@ import { chromium } from 'playwright-core';
 import readline from 'node:readline/promises';
 import { stdin as input, stdout as output } from 'node:process';
 import { upsertAccount } from '../../packages/accounts.js';
+import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 
 function parseProxy(value) {
   if (!value) return undefined;
@@ -26,10 +28,12 @@ if (!label) {
 }
 
 const proxy = parseProxy(args.proxy);
+const profileDir = args.profileDir || process.env.CHROME_PROFILE_DIR || join(fileURLToPath(new URL('../..', import.meta.url)), '.chrome-tiktok');
 const browser = await chromium.launch({
   channel: process.env.CHROME_CHANNEL || 'chrome',
   headless: false,
   proxy,
+  userDataDir: profileDir,
 });
 const context = await browser.newContext({ locale: 'vi-VN' });
 const page = await context.newPage();
@@ -55,5 +59,5 @@ if (!loggedIn) {
 }
 
 const account = await upsertAccount({ label, market, platform, cookie, user_agent: userAgent, proxy_url: args.proxy || null });
-console.log(JSON.stringify({ ok: true, account: { id: account.id, label: account.label, market: account.market, cookies: cookies.length } }));
+console.log(JSON.stringify({ ok: true, account: { id: account.id, label: account.label, market: account.market, cookies: cookies.length }, profile: profileDir }));
 await browser.close();

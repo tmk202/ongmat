@@ -156,3 +156,28 @@ enough to reproduce any published metric.
   analytics payloads.
 - Objects are content addressed (`sha256`), immutable, and indexed in
   `crawl.raw_objects`, which is the lineage record for every published number.
+
+## Resumable TikTok crawl runner
+
+`scripts/crawl-tiktok.js` crawls a product list or a keyword list, writes a
+checkpoint per item and can resume after a crash.
+
+```bash
+# product list (PDP)
+node scripts/crawl-tiktok.js --mode=pdp --file=seeds/tiktok-vn-1000.json --concurrency=8 --run=trial-1
+
+# keyword discovery (200 results per keyword)
+node scripts/crawl-tiktok.js --mode=discover --keywords="serum|kem chống nắng" --run=discovery-1
+
+# resume: same --run skips items already in items.jsonl
+```
+
+State lives in `data/runs/<run-id>/`: `items.jsonl` or `ids.jsonl`,
+`progress.json`, `summary.json`, `events.jsonl`. Nothing is written to the
+database until review.
+
+Login once with a persistent Chrome profile so cookies survive restarts:
+
+```bash
+node services/session/login.js --label=tiktok-vn-01 --platform=tiktok
+```
